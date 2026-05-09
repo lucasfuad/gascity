@@ -19,5 +19,20 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    // Local-dev only: proxy supervisor calls so the SPA can use relative
+    // URLs (matches the "Same-origin-only dashboards (dev with the Vite
+    // proxy)" path described in src/api.ts). Set GC_SUPERVISOR_URL to
+    // override the default 127.0.0.1:8372.
+    proxy: {
+      "/v0": {
+        target: process.env.GC_SUPERVISOR_URL ?? "http://127.0.0.1:8372",
+        changeOrigin: true,
+        ws: true,
+      },
+      "/schema": {
+        target: process.env.GC_SUPERVISOR_URL ?? "http://127.0.0.1:8372",
+        changeOrigin: true,
+      },
+    },
   },
 });
