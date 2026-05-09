@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/gastownhall/gascity/internal/maestro/outputpeek"
 	"github.com/gastownhall/gascity/internal/worker"
 )
 
@@ -33,15 +34,11 @@ func entryToTurn(e *worker.TranscriptEntry) outputTurn {
 				}
 			case "tool_use":
 				if b.Name != "" {
-					parts = append(parts, "["+b.Name+"]")
+					parts = append(parts, formatToolUseMarker(b.Name, b.Input))
 				}
 			case "tool_result":
-				text := extractToolResultText(b.Content)
-				if text != "" {
-					if len(text) > 500 {
-						text = text[:500] + "…"
-					}
-					parts = append(parts, "[result] "+text)
+				if text := formatToolResult(b.Content); text != "" {
+					parts = append(parts, text)
 				}
 			case "thinking":
 				// Redact thinking blocks — internal model reasoning
@@ -57,6 +54,30 @@ func entryToTurn(e *worker.TranscriptEntry) outputTurn {
 	// containing JSON. Unwrap and try again.
 	turn.Text = unwrapDoubleEncoded(e.Message)
 	return turn
+}
+
+// formatToolUseMarker renders a tool_use block as a [Name] or
+// [Name: peek] marker. The peek text is sourced from the maestro
+// outputpeek package — keeping the upstream switch a single line.
+func formatToolUseMarker(name string, input json.RawMessage) string {
+	if peek := outputpeek.ForToolInput(name, input); peek != "" {
+		return "[" + name + ": " + peek + "]"
+	}
+	return "[" + name + "]"
+}
+
+// formatToolResult renders a tool_result content block as a
+// "[result] <text>" marker, capped at outputpeek.ToolResultPeekMax.
+// Returns "" when the block has no extractable text.
+func formatToolResult(content json.RawMessage) string {
+	text := extractToolResultText(content)
+	if text == "" {
+		return ""
+	}
+	if len(text) > outputpeek.ToolResultPeekMax {
+		text = text[:outputpeek.ToolResultPeekMax] + "…"
+	}
+	return "[result] " + text
 }
 
 func historyEntryToTurn(entry worker.HistoryEntry) outputTurn {
@@ -80,15 +101,11 @@ func historyEntryToTurn(entry worker.HistoryEntry) outputTurn {
 				}
 			case worker.BlockKindToolUse:
 				if block.Name != "" {
-					parts = append(parts, "["+block.Name+"]")
+					parts = append(parts, formatToolUseMarker(block.Name, block.Input))
 				}
 			case worker.BlockKindToolResult:
-				text := extractToolResultText(block.Content)
-				if text != "" {
-					if len(text) > 500 {
-						text = text[:500] + "…"
-					}
-					parts = append(parts, "[result] "+text)
+				if text := formatToolResult(block.Content); text != "" {
+					parts = append(parts, text)
 				}
 			case worker.BlockKindThinking:
 				parts = append(parts, "[thinking]")
