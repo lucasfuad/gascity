@@ -1,5 +1,19 @@
 .DS_Store
 CLAUDE.local.md
+.superpowers/
+
+# MCP runtime artifacts (Playwright, Chrome DevTools snapshots/console logs)
+.playwright-mcp/
+.chrome-devtools-mcp/
+
+# Local design/scratch artifacts — briefs, mockups, root-level screenshots.
+# Versioned screenshots belong in docs/ or engdocs/ (paths not matched here).
+/*.png
+/*.jpg
+/*.jpeg
+/*-brief.md
+/*-scratch.md
+
 coverage.txt
 coverage.integration-*.txt
 cmd/gc/.runtime/
