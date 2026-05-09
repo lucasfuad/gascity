@@ -147,6 +147,7 @@ func NewSupervisorMux(resolver CityResolver, initializer cityInitializer, readOn
 	}
 	sm.registerSupervisorRoutes()
 	sm.registerCityRoutes()
+	sm.registerMaestroRoutes() // [maestro] fork-only routes (internal/api/maestro_*.go)
 	documentProblemTypes(sm.humaAPI.OpenAPI())
 	// Declare framework-level response headers (X-GC-Request-Id) via
 	// components.headers + $ref on every operation. Middleware writes

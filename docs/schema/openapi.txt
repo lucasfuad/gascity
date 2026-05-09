@@ -102,6 +102,140 @@
         ],
         "type": "object"
       },
+      "AgentDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "args": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "default_sling_formula": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dir": {
+            "type": "string"
+          },
+          "drain_timeout": {
+            "type": "string"
+          },
+          "env": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "idle_timeout": {
+            "type": "string"
+          },
+          "inject_fragments": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "max_active_sessions": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "min_active_sessions": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "namepool": {
+            "type": "string"
+          },
+          "nudge": {
+            "type": "string"
+          },
+          "option_defaults": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "overlay_dir": {
+            "type": "string"
+          },
+          "pre_start": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "prompt_preview": {
+            "type": "string"
+          },
+          "prompt_template": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "scale_check": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          },
+          "sleep_after_idle": {
+            "type": "string"
+          },
+          "start_command": {
+            "type": "string"
+          },
+          "suspended": {
+            "type": "boolean"
+          },
+          "wake_mode": {
+            "type": "string"
+          },
+          "work_dir": {
+            "type": "string"
+          },
+          "work_query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "suspended"
+        ],
+        "type": "object"
+      },
+      "AgentFullResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/AgentDefinition"
+          },
+          "runtime": {}
+        },
+        "required": [
+          "runtime",
+          "definition"
+        ],
+        "type": "object"
+      },
       "AgentMapping": {
         "additionalProperties": false,
         "properties": {
@@ -12153,6 +12287,76 @@
         "summary": "Patch v0 city by city name agent by base"
       }
     },
+    "/v0/city/{cityName}/agent/{base}/full": {
+      "get": {
+        "operationId": "get-v0-city-by-city-name-agent-by-base-full",
+        "parameters": [
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent name (unqualified, no rig).",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent name (unqualified, no rig).",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentFullResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "X-GC-Index": {
+                "schema": {
+                  "description": "Latest event sequence number.",
+                  "format": "int64",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Get v0 city by city name agent by base full"
+      }
+    },
     "/v0/city/{cityName}/agent/{base}/output": {
       "get": {
         "operationId": "get-v0-city-by-city-name-agent-by-base-output",
@@ -12700,6 +12904,86 @@
           }
         },
         "summary": "Patch v0 city by city name agent by dir by base"
+      }
+    },
+    "/v0/city/{cityName}/agent/{dir}/{base}/full": {
+      "get": {
+        "operationId": "get-v0-city-by-city-name-agent-by-dir-by-base-full",
+        "parameters": [
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent directory (rig name).",
+            "in": "path",
+            "name": "dir",
+            "required": true,
+            "schema": {
+              "description": "Agent directory (rig name).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent base name.",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent base name.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentFullResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "X-GC-Index": {
+                "schema": {
+                  "description": "Latest event sequence number.",
+                  "format": "int64",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Get v0 city by city name agent by dir by base full"
       }
     },
     "/v0/city/{cityName}/agent/{dir}/{base}/output": {

@@ -256,6 +256,44 @@ type AgentCreatedOutputBody struct {
 	Status string `json:"status"`
 }
 
+// AgentDefinition defines model for AgentDefinition.
+type AgentDefinition struct {
+	Args                *[]string          `json:"args,omitempty"`
+	DefaultSlingFormula *string            `json:"default_sling_formula,omitempty"`
+	Description         *string            `json:"description,omitempty"`
+	Dir                 *string            `json:"dir,omitempty"`
+	DrainTimeout        *string            `json:"drain_timeout,omitempty"`
+	Env                 *map[string]string `json:"env,omitempty"`
+	IdleTimeout         *string            `json:"idle_timeout,omitempty"`
+	InjectFragments     *[]string          `json:"inject_fragments,omitempty"`
+	MaxActiveSessions   *int64             `json:"max_active_sessions,omitempty"`
+	MinActiveSessions   *int64             `json:"min_active_sessions,omitempty"`
+	Name                string             `json:"name"`
+	Namepool            *string            `json:"namepool,omitempty"`
+	Nudge               *string            `json:"nudge,omitempty"`
+	OptionDefaults      *map[string]string `json:"option_defaults,omitempty"`
+	OverlayDir          *string            `json:"overlay_dir,omitempty"`
+	PreStart            *[]string          `json:"pre_start,omitempty"`
+	PromptPreview       *string            `json:"prompt_preview,omitempty"`
+	PromptTemplate      *string            `json:"prompt_template,omitempty"`
+	Provider            *string            `json:"provider,omitempty"`
+	ScaleCheck          *string            `json:"scale_check,omitempty"`
+	Scope               *string            `json:"scope,omitempty"`
+	Session             *string            `json:"session,omitempty"`
+	SleepAfterIdle      *string            `json:"sleep_after_idle,omitempty"`
+	StartCommand        *string            `json:"start_command,omitempty"`
+	Suspended           bool               `json:"suspended"`
+	WakeMode            *string            `json:"wake_mode,omitempty"`
+	WorkDir             *string            `json:"work_dir,omitempty"`
+	WorkQuery           *string            `json:"work_query,omitempty"`
+}
+
+// AgentFullResponse defines model for AgentFullResponse.
+type AgentFullResponse struct {
+	Definition AgentDefinition `json:"definition"`
+	Runtime    interface{}     `json:"runtime"`
+}
+
 // AgentMapping defines model for AgentMapping.
 type AgentMapping struct {
 	AgentId         string `json:"agent_id"`
@@ -8445,6 +8483,9 @@ type ClientInterface interface {
 
 	PatchV0CityByCityNameAgentByBase(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseParams, body PatchV0CityByCityNameAgentByBaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetV0CityByCityNameAgentByBaseFull request
+	GetV0CityByCityNameAgentByBaseFull(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetV0CityByCityNameAgentByBaseOutput request
 	GetV0CityByCityNameAgentByBaseOutput(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8464,6 +8505,9 @@ type ClientInterface interface {
 	PatchV0CityByCityNameAgentByDirByBaseWithBody(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PatchV0CityByCityNameAgentByDirByBase(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseParams, body PatchV0CityByCityNameAgentByDirByBaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetV0CityByCityNameAgentByDirByBaseFull request
+	GetV0CityByCityNameAgentByDirByBaseFull(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetV0CityByCityNameAgentByDirByBaseOutput request
 	GetV0CityByCityNameAgentByDirByBaseOutput(ctx context.Context, cityName string, dir string, base string, params *GetV0CityByCityNameAgentByDirByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -9057,6 +9101,18 @@ func (c *Client) PatchV0CityByCityNameAgentByBase(ctx context.Context, cityName 
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetV0CityByCityNameAgentByBaseFull(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV0CityByCityNameAgentByBaseFullRequest(c.Server, cityName, base)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetV0CityByCityNameAgentByBaseOutput(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetV0CityByCityNameAgentByBaseOutputRequest(c.Server, cityName, base, params)
 	if err != nil {
@@ -9131,6 +9187,18 @@ func (c *Client) PatchV0CityByCityNameAgentByDirByBaseWithBody(ctx context.Conte
 
 func (c *Client) PatchV0CityByCityNameAgentByDirByBase(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseParams, body PatchV0CityByCityNameAgentByDirByBaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPatchV0CityByCityNameAgentByDirByBaseRequest(c.Server, cityName, dir, base, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetV0CityByCityNameAgentByDirByBaseFull(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV0CityByCityNameAgentByDirByBaseFullRequest(c.Server, cityName, dir, base)
 	if err != nil {
 		return nil, err
 	}
@@ -11484,6 +11552,47 @@ func NewPatchV0CityByCityNameAgentByBaseRequestWithBody(server string, cityName 
 	return req, nil
 }
 
+// NewGetV0CityByCityNameAgentByBaseFullRequest generates requests for GetV0CityByCityNameAgentByBaseFull
+func NewGetV0CityByCityNameAgentByBaseFullRequest(server string, cityName string, base string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/full", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetV0CityByCityNameAgentByBaseOutputRequest generates requests for GetV0CityByCityNameAgentByBaseOutput
 func NewGetV0CityByCityNameAgentByBaseOutputRequest(server string, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams) (*http.Request, error) {
 	var err error
@@ -11843,6 +11952,54 @@ func NewPatchV0CityByCityNameAgentByDirByBaseRequestWithBody(server string, city
 
 		req.Header.Set("X-GC-Request", headerParam0)
 
+	}
+
+	return req, nil
+}
+
+// NewGetV0CityByCityNameAgentByDirByBaseFullRequest generates requests for GetV0CityByCityNameAgentByDirByBaseFull
+func NewGetV0CityByCityNameAgentByDirByBaseFullRequest(server string, cityName string, dir string, base string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "dir", dir, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/%s/full", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return req, nil
@@ -20274,6 +20431,9 @@ type ClientWithResponsesInterface interface {
 
 	PatchV0CityByCityNameAgentByBaseWithResponse(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseParams, body PatchV0CityByCityNameAgentByBaseJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByBaseResponse, error)
 
+	// GetV0CityByCityNameAgentByBaseFullWithResponse request
+	GetV0CityByCityNameAgentByBaseFullWithResponse(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseFullResponse, error)
+
 	// GetV0CityByCityNameAgentByBaseOutputWithResponse request
 	GetV0CityByCityNameAgentByBaseOutputWithResponse(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseOutputResponse, error)
 
@@ -20293,6 +20453,9 @@ type ClientWithResponsesInterface interface {
 	PatchV0CityByCityNameAgentByDirByBaseWithBodyWithResponse(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByDirByBaseResponse, error)
 
 	PatchV0CityByCityNameAgentByDirByBaseWithResponse(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseParams, body PatchV0CityByCityNameAgentByDirByBaseJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByDirByBaseResponse, error)
+
+	// GetV0CityByCityNameAgentByDirByBaseFullWithResponse request
+	GetV0CityByCityNameAgentByDirByBaseFullWithResponse(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByDirByBaseFullResponse, error)
 
 	// GetV0CityByCityNameAgentByDirByBaseOutputWithResponse request
 	GetV0CityByCityNameAgentByDirByBaseOutputWithResponse(ctx context.Context, cityName string, dir string, base string, params *GetV0CityByCityNameAgentByDirByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByDirByBaseOutputResponse, error)
@@ -20938,6 +21101,29 @@ func (r PatchV0CityByCityNameAgentByBaseResponse) StatusCode() int {
 	return 0
 }
 
+type GetV0CityByCityNameAgentByBaseFullResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *AgentFullResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV0CityByCityNameAgentByBaseFullResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV0CityByCityNameAgentByBaseFullResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetV0CityByCityNameAgentByBaseOutputResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -21069,6 +21255,29 @@ func (r PatchV0CityByCityNameAgentByDirByBaseResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PatchV0CityByCityNameAgentByDirByBaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetV0CityByCityNameAgentByDirByBaseFullResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *AgentFullResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV0CityByCityNameAgentByDirByBaseFullResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV0CityByCityNameAgentByDirByBaseFullResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -24134,6 +24343,15 @@ func (c *ClientWithResponses) PatchV0CityByCityNameAgentByBaseWithResponse(ctx c
 	return ParsePatchV0CityByCityNameAgentByBaseResponse(rsp)
 }
 
+// GetV0CityByCityNameAgentByBaseFullWithResponse request returning *GetV0CityByCityNameAgentByBaseFullResponse
+func (c *ClientWithResponses) GetV0CityByCityNameAgentByBaseFullWithResponse(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseFullResponse, error) {
+	rsp, err := c.GetV0CityByCityNameAgentByBaseFull(ctx, cityName, base, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV0CityByCityNameAgentByBaseFullResponse(rsp)
+}
+
 // GetV0CityByCityNameAgentByBaseOutputWithResponse request returning *GetV0CityByCityNameAgentByBaseOutputResponse
 func (c *ClientWithResponses) GetV0CityByCityNameAgentByBaseOutputWithResponse(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseOutputResponse, error) {
 	rsp, err := c.GetV0CityByCityNameAgentByBaseOutput(ctx, cityName, base, params, reqEditors...)
@@ -24194,6 +24412,15 @@ func (c *ClientWithResponses) PatchV0CityByCityNameAgentByDirByBaseWithResponse(
 		return nil, err
 	}
 	return ParsePatchV0CityByCityNameAgentByDirByBaseResponse(rsp)
+}
+
+// GetV0CityByCityNameAgentByDirByBaseFullWithResponse request returning *GetV0CityByCityNameAgentByDirByBaseFullResponse
+func (c *ClientWithResponses) GetV0CityByCityNameAgentByDirByBaseFullWithResponse(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByDirByBaseFullResponse, error) {
+	rsp, err := c.GetV0CityByCityNameAgentByDirByBaseFull(ctx, cityName, dir, base, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV0CityByCityNameAgentByDirByBaseFullResponse(rsp)
 }
 
 // GetV0CityByCityNameAgentByDirByBaseOutputWithResponse request returning *GetV0CityByCityNameAgentByDirByBaseOutputResponse
@@ -25909,6 +26136,39 @@ func ParsePatchV0CityByCityNameAgentByBaseResponse(rsp *http.Response) (*PatchV0
 	return response, nil
 }
 
+// ParseGetV0CityByCityNameAgentByBaseFullResponse parses an HTTP response from a GetV0CityByCityNameAgentByBaseFullWithResponse call
+func ParseGetV0CityByCityNameAgentByBaseFullResponse(rsp *http.Response) (*GetV0CityByCityNameAgentByBaseFullResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV0CityByCityNameAgentByBaseFullResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentFullResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetV0CityByCityNameAgentByBaseOutputResponse parses an HTTP response from a GetV0CityByCityNameAgentByBaseOutputWithResponse call
 func ParseGetV0CityByCityNameAgentByBaseOutputResponse(rsp *http.Response) (*GetV0CityByCityNameAgentByBaseOutputResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -26083,6 +26343,39 @@ func ParsePatchV0CityByCityNameAgentByDirByBaseResponse(rsp *http.Response) (*Pa
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest OKResponseBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetV0CityByCityNameAgentByDirByBaseFullResponse parses an HTTP response from a GetV0CityByCityNameAgentByDirByBaseFullWithResponse call
+func ParseGetV0CityByCityNameAgentByDirByBaseFullResponse(rsp *http.Response) (*GetV0CityByCityNameAgentByDirByBaseFullResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV0CityByCityNameAgentByDirByBaseFullResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentFullResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
