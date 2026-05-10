@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -210,6 +211,107 @@ func (s *Server) maestroAgentPatchFullByName(ctx context.Context, name, ifMatch 
 	}, nil
 }
 
+// MaestroAgentCreateFullInput is the Huma input for
+// POST /v0/city/{cityName}/agent/{base}/full. Identity comes from the
+// URL path (Name = {base}, Dir = "" for the unqualified form); the body
+// carries every other editable field of the new agent.
+type MaestroAgentCreateFullInput struct {
+	CityScope
+	Name string                         `path:"base" doc:"Agent name (unqualified, no rig)."`
+	Body agentconfig.AgentCreateRequest `contentType:"application/json"`
+}
+
+// MaestroAgentCreateFullQualifiedInput is the Huma input for
+// POST /v0/city/{cityName}/agent/{dir}/{base}/full.
+type MaestroAgentCreateFullQualifiedInput struct {
+	CityScope
+	Dir  string                         `path:"dir" doc:"Agent directory (rig name)."`
+	Base string                         `path:"base" doc:"Agent base name."`
+	Body agentconfig.AgentCreateRequest `contentType:"application/json"`
+}
+
+// QualifiedName joins dir and base into a canonical agent name.
+func (i *MaestroAgentCreateFullQualifiedInput) QualifiedName() string {
+	return joinAgentQualifiedName(i.Dir, i.Base)
+}
+
+// MaestroAgentCreateFullOutput mirrors MaestroAgentPatchFullOutput so
+// successful creates and patches share a wire shape — the studio's
+// create wizard hands the response off to the same code path the edit
+// flow uses for read-after-write. The 201 status is set via the
+// cityRegister Operation declaration in registerMaestroRoutes.
+type MaestroAgentCreateFullOutput struct {
+	Index uint64 `header:"X-GC-Index" doc:"Latest event sequence number."`
+	ETag  string `header:"ETag" doc:"Opaque content hash of the agent definition. Use as If-Match on the next PATCH."`
+	Body  agentconfig.AgentFullResponse
+}
+
+// humaHandleMaestroAgentCreateFull is the Huma-typed handler for the
+// fork-only POST /v0/city/{cityName}/agent/{base}/full (unqualified form).
+//
+// Unlike the upstream POST /v0/city/{cityName}/agents (which takes
+// name+dir+provider+scope in the body and returns a minimal "created"
+// envelope), this endpoint reads identity from the URL path and returns
+// the full AgentFullResponse plus ETag, so the Studio's create wizard
+// can hand off to the same edit surface without an extra GET round-trip.
+func (s *Server) humaHandleMaestroAgentCreateFull(ctx context.Context, input *MaestroAgentCreateFullInput) (*MaestroAgentCreateFullOutput, error) {
+	return s.maestroAgentCreateFullByName(ctx, "", input.Name, input.Body)
+}
+
+// humaHandleMaestroAgentCreateFullQualified is the qualified
+// (rig-scoped) variant of POST /full.
+func (s *Server) humaHandleMaestroAgentCreateFullQualified(ctx context.Context, input *MaestroAgentCreateFullQualifiedInput) (*MaestroAgentCreateFullOutput, error) {
+	return s.maestroAgentCreateFullByName(ctx, input.Dir, input.Base, input.Body)
+}
+
+// maestroAgentCreateFullByName is the shared dispatch for the qualified
+// and unqualified POST /full handlers. It:
+//
+//  1. validates the path-derived agent name (400 otherwise),
+//  2. maps the request body into a config.Agent via BuildConfigAgent,
+//  3. asks the state's StateMutator to create the agent — duplicate
+//     names surface as ErrAlreadyExists and become 409 via mutationError,
+//  4. waits for the new agent to be reachable through findAgent (same
+//     read-after-write contract as POST /v0/city/{cityName}/agents),
+//  5. composes the response from the post-create snapshot through
+//     maestroAgentFullByName, so POST/PATCH/GET share one source of
+//     truth for the wire shape.
+func (s *Server) maestroAgentCreateFullByName(ctx context.Context, dir, base string, body agentconfig.AgentCreateRequest) (*MaestroAgentCreateFullOutput, error) {
+	if base == "" {
+		return nil, huma.Error400BadRequest("agent name required")
+	}
+
+	mutator, ok := s.state.(StateMutator)
+	if !ok {
+		return nil, errMutationsNotSupported
+	}
+
+	agent := agentconfig.BuildConfigAgent(body, dir, base)
+	if err := mutator.CreateAgent(agent); err != nil {
+		return nil, mutationError(err)
+	}
+
+	qualifiedName := agent.QualifiedName()
+	if waiter, ok := s.state.(AgentVisibilityWaiter); ok {
+		waitCtx, cancel := context.WithTimeout(ctx, s.agentCreateVisibilityWaitTimeout())
+		err := waiter.WaitForAgentVisibility(waitCtx, qualifiedName)
+		cancel()
+		if err != nil {
+			return nil, agentVisibilityWaitHTTPError(err)
+		}
+	}
+
+	post, err := s.maestroAgentFullByName(ctx, qualifiedName)
+	if err != nil {
+		return nil, err
+	}
+	return &MaestroAgentCreateFullOutput{
+		Index: post.Index,
+		ETag:  post.ETag,
+		Body:  post.Body,
+	}, nil
+}
+
 // MaestroAgentGetPromptTemplateInput is the Huma input for
 // GET /v0/city/{cityName}/agent/{base}/prompt-template.
 type MaestroAgentGetPromptTemplateInput struct {
@@ -404,6 +506,25 @@ func (sm *SupervisorMux) registerMaestroRoutes() {
 	cityGet(sm, "/agent/{dir}/{base}/full", (*Server).humaHandleMaestroAgentGetFullQualified)
 	cityPatch(sm, "/agent/{base}/full", (*Server).humaHandleMaestroAgentPatchFull)
 	cityPatch(sm, "/agent/{dir}/{base}/full", (*Server).humaHandleMaestroAgentPatchFullQualified)
+	// POST /full uses cityRegister so the 201 Created status is explicit
+	// in the OpenAPI spec — distinguishes the create surface from the
+	// PATCH/GET response (200) at the schema level.
+	cityRegister(sm, huma.Operation{
+		OperationID:   "maestro-create-agent-full",
+		Method:        http.MethodPost,
+		Path:          "/agent/{base}/full",
+		Summary:       "Create an agent with the full editable subset",
+		Description:   "Fork-only create endpoint mirroring PATCH /full's editable shape. Returns the post-create AgentFullResponse plus ETag, so the Studio's create wizard can hand off to the edit surface without a follow-up GET.",
+		DefaultStatus: http.StatusCreated,
+	}, (*Server).humaHandleMaestroAgentCreateFull)
+	cityRegister(sm, huma.Operation{
+		OperationID:   "maestro-create-agent-full-qualified",
+		Method:        http.MethodPost,
+		Path:          "/agent/{dir}/{base}/full",
+		Summary:       "Create an agent in a rig with the full editable subset",
+		Description:   "Rig-scoped variant of POST /agent/{base}/full.",
+		DefaultStatus: http.StatusCreated,
+	}, (*Server).humaHandleMaestroAgentCreateFullQualified)
 	cityGet(sm, "/agent/{base}/prompt-template", (*Server).humaHandleMaestroAgentGetPromptTemplate)
 	cityGet(sm, "/agent/{dir}/{base}/prompt-template", (*Server).humaHandleMaestroAgentGetPromptTemplateQualified)
 	cityPut(sm, "/agent/{base}/prompt-template", (*Server).humaHandleMaestroAgentPutPromptTemplate)

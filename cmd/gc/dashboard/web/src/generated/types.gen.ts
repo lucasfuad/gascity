@@ -34,6 +34,43 @@ export type AgentCreateInputBody = {
     scope?: string;
 };
 
+export type AgentCreateRequest = {
+    description?: string;
+    /**
+     * Go duration string.
+     */
+    drain_timeout?: string;
+    env?: {
+        [key: string]: string;
+    };
+    /**
+     * Go duration string ('30s', '5m', '1h'). Empty leaves the agent at the city default.
+     */
+    idle_timeout?: string;
+    inject_fragments?: Array<string> | null;
+    max_active_sessions?: number;
+    min_active_sessions?: number;
+    nudge?: string;
+    pre_start?: Array<string> | null;
+    /**
+     * Path to a prompt template file, relative to the city root.
+     */
+    prompt_template?: string;
+    /**
+     * Provider name registered in the city's providers list.
+     */
+    provider: string;
+    scale_check?: string;
+    scope?: 'city' | 'rig';
+    /**
+     * Duration string or 'off'.
+     */
+    sleep_after_idle?: string;
+    suspended?: boolean;
+    wake_mode?: 'resume' | 'fresh';
+    work_dir?: string;
+};
+
 export type AgentCreatedOutputBody = {
     /**
      * Created agent name.
@@ -4951,6 +4988,46 @@ export type PatchV0CityByCityNameAgentByBaseFullResponses = {
 
 export type PatchV0CityByCityNameAgentByBaseFullResponse = PatchV0CityByCityNameAgentByBaseFullResponses[keyof PatchV0CityByCityNameAgentByBaseFullResponses];
 
+export type MaestroCreateAgentFullData = {
+    body: AgentCreateRequest;
+    headers: {
+        /**
+         * Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+         */
+        'X-GC-Request': string;
+    };
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent name (unqualified, no rig).
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{base}/full';
+};
+
+export type MaestroCreateAgentFullErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type MaestroCreateAgentFullError = MaestroCreateAgentFullErrors[keyof MaestroCreateAgentFullErrors];
+
+export type MaestroCreateAgentFullResponses = {
+    /**
+     * Created
+     */
+    201: AgentFullResponse;
+};
+
+export type MaestroCreateAgentFullResponse = MaestroCreateAgentFullResponses[keyof MaestroCreateAgentFullResponses];
+
 export type GetV0CityByCityNameAgentByBaseOutputData = {
     body?: never;
     path: {
@@ -5391,6 +5468,50 @@ export type PatchV0CityByCityNameAgentByDirByBaseFullResponses = {
 };
 
 export type PatchV0CityByCityNameAgentByDirByBaseFullResponse = PatchV0CityByCityNameAgentByDirByBaseFullResponses[keyof PatchV0CityByCityNameAgentByDirByBaseFullResponses];
+
+export type MaestroCreateAgentFullQualifiedData = {
+    body: AgentCreateRequest;
+    headers: {
+        /**
+         * Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+         */
+        'X-GC-Request': string;
+    };
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent directory (rig name).
+         */
+        dir: string;
+        /**
+         * Agent base name.
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{dir}/{base}/full';
+};
+
+export type MaestroCreateAgentFullQualifiedErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type MaestroCreateAgentFullQualifiedError = MaestroCreateAgentFullQualifiedErrors[keyof MaestroCreateAgentFullQualifiedErrors];
+
+export type MaestroCreateAgentFullQualifiedResponses = {
+    /**
+     * Created
+     */
+    201: AgentFullResponse;
+};
+
+export type MaestroCreateAgentFullQualifiedResponse = MaestroCreateAgentFullQualifiedResponses[keyof MaestroCreateAgentFullQualifiedResponses];
 
 export type GetV0CityByCityNameAgentByDirByBaseOutputData = {
     body?: never;

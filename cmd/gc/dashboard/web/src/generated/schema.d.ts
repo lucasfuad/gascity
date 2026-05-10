@@ -102,7 +102,11 @@ export interface paths {
         /** Get v0 city by city name agent by base full */
         get: operations["get-v0-city-by-city-name-agent-by-base-full"];
         put?: never;
-        post?: never;
+        /**
+         * Create an agent with the full editable subset
+         * @description Fork-only create endpoint mirroring PATCH /full's editable shape. Returns the post-create AgentFullResponse plus ETag, so the Studio's create wizard can hand off to the edit surface without a follow-up GET.
+         */
+        post: operations["maestro-create-agent-full"];
         delete?: never;
         options?: never;
         head?: never;
@@ -211,7 +215,11 @@ export interface paths {
         /** Get v0 city by city name agent by dir by base full */
         get: operations["get-v0-city-by-city-name-agent-by-dir-by-base-full"];
         put?: never;
-        post?: never;
+        /**
+         * Create an agent in a rig with the full editable subset
+         * @description Rig-scoped variant of POST /agent/{base}/full.
+         */
+        post: operations["maestro-create-agent-full-qualified"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2010,6 +2018,36 @@ export interface components {
             provider: string;
             /** @description Agent scope. */
             scope?: string;
+        };
+        AgentCreateRequest: {
+            description?: string;
+            /** @description Go duration string. */
+            drain_timeout?: string;
+            env?: {
+                [key: string]: string;
+            };
+            /** @description Go duration string ('30s', '5m', '1h'). Empty leaves the agent at the city default. */
+            idle_timeout?: string;
+            inject_fragments?: string[] | null;
+            /** Format: int64 */
+            max_active_sessions?: number;
+            /** Format: int64 */
+            min_active_sessions?: number;
+            nudge?: string;
+            pre_start?: string[] | null;
+            /** @description Path to a prompt template file, relative to the city root. */
+            prompt_template?: string;
+            /** @description Provider name registered in the city's providers list. */
+            provider: string;
+            scale_check?: string;
+            /** @enum {string} */
+            scope?: "city" | "rig";
+            /** @description Duration string or 'off'. */
+            sleep_after_idle?: string;
+            suspended?: boolean;
+            /** @enum {string} */
+            wake_mode?: "resume" | "fresh";
+            work_dir?: string;
         };
         AgentCreatedOutputBody: {
             /** @description Created agent name. */
@@ -6315,6 +6353,51 @@ export interface operations {
             };
         };
     };
+    "maestro-create-agent-full": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks. */
+                "X-GC-Request": string;
+            };
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent name (unqualified, no rig). */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Index"?: number;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentFullResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "patch-v0-city-by-city-name-agent-by-base-full": {
         parameters: {
             query?: never;
@@ -6730,6 +6813,53 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Index"?: number;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentFullResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "maestro-create-agent-full-qualified": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks. */
+                "X-GC-Request": string;
+            };
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent directory (rig name). */
+                dir: string;
+                /** @description Agent base name. */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
                 headers: {
                     ETag?: string;
                     "X-GC-Index"?: number;

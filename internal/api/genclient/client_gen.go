@@ -18,18 +18,54 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for AgentCreateRequestScope.
+const (
+	AgentCreateRequestScopeCity AgentCreateRequestScope = "city"
+	AgentCreateRequestScopeRig  AgentCreateRequestScope = "rig"
+)
+
+// Valid indicates whether the value is a known member of the AgentCreateRequestScope enum.
+func (e AgentCreateRequestScope) Valid() bool {
+	switch e {
+	case AgentCreateRequestScopeCity:
+		return true
+	case AgentCreateRequestScopeRig:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentCreateRequestWakeMode.
+const (
+	AgentCreateRequestWakeModeFresh  AgentCreateRequestWakeMode = "fresh"
+	AgentCreateRequestWakeModeResume AgentCreateRequestWakeMode = "resume"
+)
+
+// Valid indicates whether the value is a known member of the AgentCreateRequestWakeMode enum.
+func (e AgentCreateRequestWakeMode) Valid() bool {
+	switch e {
+	case AgentCreateRequestWakeModeFresh:
+		return true
+	case AgentCreateRequestWakeModeResume:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentPatchRequestScope.
 const (
-	City AgentPatchRequestScope = "city"
-	Rig  AgentPatchRequestScope = "rig"
+	AgentPatchRequestScopeCity AgentPatchRequestScope = "city"
+	AgentPatchRequestScopeRig  AgentPatchRequestScope = "rig"
 )
 
 // Valid indicates whether the value is a known member of the AgentPatchRequestScope enum.
 func (e AgentPatchRequestScope) Valid() bool {
 	switch e {
-	case City:
+	case AgentPatchRequestScopeCity:
 		return true
-	case Rig:
+	case AgentPatchRequestScopeRig:
 		return true
 	default:
 		return false
@@ -221,16 +257,16 @@ func (e PostV0CityByCityNameAgentByBaseByActionParamsAction) Valid() bool {
 
 // Defines values for PostV0CityByCityNameAgentByDirByBaseByActionParamsAction.
 const (
-	Resume  PostV0CityByCityNameAgentByDirByBaseByActionParamsAction = "resume"
-	Suspend PostV0CityByCityNameAgentByDirByBaseByActionParamsAction = "suspend"
+	PostV0CityByCityNameAgentByDirByBaseByActionParamsActionResume  PostV0CityByCityNameAgentByDirByBaseByActionParamsAction = "resume"
+	PostV0CityByCityNameAgentByDirByBaseByActionParamsActionSuspend PostV0CityByCityNameAgentByDirByBaseByActionParamsAction = "suspend"
 )
 
 // Valid indicates whether the value is a known member of the PostV0CityByCityNameAgentByDirByBaseByActionParamsAction enum.
 func (e PostV0CityByCityNameAgentByDirByBaseByActionParamsAction) Valid() bool {
 	switch e {
-	case Resume:
+	case PostV0CityByCityNameAgentByDirByBaseByActionParamsActionResume:
 		return true
-	case Suspend:
+	case PostV0CityByCityNameAgentByDirByBaseByActionParamsActionSuspend:
 		return true
 	default:
 		return false
@@ -282,6 +318,43 @@ type AgentCreateInputBody struct {
 	// Scope Agent scope.
 	Scope *string `json:"scope,omitempty"`
 }
+
+// AgentCreateRequest defines model for AgentCreateRequest.
+type AgentCreateRequest struct {
+	Description *string `json:"description,omitempty"`
+
+	// DrainTimeout Go duration string.
+	DrainTimeout *string            `json:"drain_timeout,omitempty"`
+	Env          *map[string]string `json:"env,omitempty"`
+
+	// IdleTimeout Go duration string ('30s', '5m', '1h'). Empty leaves the agent at the city default.
+	IdleTimeout       *string   `json:"idle_timeout,omitempty"`
+	InjectFragments   *[]string `json:"inject_fragments,omitempty"`
+	MaxActiveSessions *int64    `json:"max_active_sessions,omitempty"`
+	MinActiveSessions *int64    `json:"min_active_sessions,omitempty"`
+	Nudge             *string   `json:"nudge,omitempty"`
+	PreStart          *[]string `json:"pre_start,omitempty"`
+
+	// PromptTemplate Path to a prompt template file, relative to the city root.
+	PromptTemplate *string `json:"prompt_template,omitempty"`
+
+	// Provider Provider name registered in the city's providers list.
+	Provider   string                   `json:"provider"`
+	ScaleCheck *string                  `json:"scale_check,omitempty"`
+	Scope      *AgentCreateRequestScope `json:"scope,omitempty"`
+
+	// SleepAfterIdle Duration string or 'off'.
+	SleepAfterIdle *string                     `json:"sleep_after_idle,omitempty"`
+	Suspended      *bool                       `json:"suspended,omitempty"`
+	WakeMode       *AgentCreateRequestWakeMode `json:"wake_mode,omitempty"`
+	WorkDir        *string                     `json:"work_dir,omitempty"`
+}
+
+// AgentCreateRequestScope defines model for AgentCreateRequest.Scope.
+type AgentCreateRequestScope string
+
+// AgentCreateRequestWakeMode defines model for AgentCreateRequest.WakeMode.
+type AgentCreateRequestWakeMode string
 
 // AgentCreatedOutputBody defines model for AgentCreatedOutputBody.
 type AgentCreatedOutputBody struct {
@@ -4107,6 +4180,12 @@ type PatchV0CityByCityNameAgentByBaseFullParams struct {
 	IfMatch *string `json:"If-Match,omitempty"`
 }
 
+// MaestroCreateAgentFullParams defines parameters for MaestroCreateAgentFull.
+type MaestroCreateAgentFullParams struct {
+	// XGCRequest Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+	XGCRequest string `json:"X-GC-Request"`
+}
+
 // GetV0CityByCityNameAgentByBaseOutputParams defines parameters for GetV0CityByCityNameAgentByBaseOutput.
 type GetV0CityByCityNameAgentByBaseOutputParams struct {
 	// Tail Number of recent compaction segments to return. This API parameter keeps compaction-segment semantics even though gc session logs --tail counts displayed transcript entries. Omit for the endpoint default (usually 1); 0 returns all segments; N>0 returns the last N.
@@ -4153,6 +4232,12 @@ type PatchV0CityByCityNameAgentByDirByBaseFullParams struct {
 
 	// IfMatch ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.
 	IfMatch *string `json:"If-Match,omitempty"`
+}
+
+// MaestroCreateAgentFullQualifiedParams defines parameters for MaestroCreateAgentFullQualified.
+type MaestroCreateAgentFullQualifiedParams struct {
+	// XGCRequest Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+	XGCRequest string `json:"X-GC-Request"`
 }
 
 // GetV0CityByCityNameAgentByDirByBaseOutputParams defines parameters for GetV0CityByCityNameAgentByDirByBaseOutput.
@@ -5034,6 +5119,9 @@ type PatchV0CityByCityNameAgentByBaseJSONRequestBody = AgentUpdateInputBody
 // PatchV0CityByCityNameAgentByBaseFullJSONRequestBody defines body for PatchV0CityByCityNameAgentByBaseFull for application/json ContentType.
 type PatchV0CityByCityNameAgentByBaseFullJSONRequestBody = AgentPatchRequest
 
+// MaestroCreateAgentFullJSONRequestBody defines body for MaestroCreateAgentFull for application/json ContentType.
+type MaestroCreateAgentFullJSONRequestBody = AgentCreateRequest
+
 // PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody defines body for PutV0CityByCityNameAgentByBasePromptTemplate for application/json ContentType.
 type PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody = PromptTemplatePutBody
 
@@ -5042,6 +5130,9 @@ type PatchV0CityByCityNameAgentByDirByBaseJSONRequestBody = AgentUpdateQualified
 
 // PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody defines body for PatchV0CityByCityNameAgentByDirByBaseFull for application/json ContentType.
 type PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody = AgentPatchRequest
+
+// MaestroCreateAgentFullQualifiedJSONRequestBody defines body for MaestroCreateAgentFullQualified for application/json ContentType.
+type MaestroCreateAgentFullQualifiedJSONRequestBody = AgentCreateRequest
 
 // PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody defines body for PutV0CityByCityNameAgentByDirByBasePromptTemplate for application/json ContentType.
 type PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody = PromptTemplatePutBody
@@ -8623,6 +8714,11 @@ type ClientInterface interface {
 
 	PatchV0CityByCityNameAgentByBaseFull(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, body PatchV0CityByCityNameAgentByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// MaestroCreateAgentFullWithBody request with any body
+	MaestroCreateAgentFullWithBody(ctx context.Context, cityName string, base string, params *MaestroCreateAgentFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MaestroCreateAgentFull(ctx context.Context, cityName string, base string, params *MaestroCreateAgentFullParams, body MaestroCreateAgentFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetV0CityByCityNameAgentByBaseOutput request
 	GetV0CityByCityNameAgentByBaseOutput(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8658,6 +8754,11 @@ type ClientInterface interface {
 	PatchV0CityByCityNameAgentByDirByBaseFullWithBody(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PatchV0CityByCityNameAgentByDirByBaseFull(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, body PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MaestroCreateAgentFullQualifiedWithBody request with any body
+	MaestroCreateAgentFullQualifiedWithBody(ctx context.Context, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MaestroCreateAgentFullQualified(ctx context.Context, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, body MaestroCreateAgentFullQualifiedJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetV0CityByCityNameAgentByDirByBaseOutput request
 	GetV0CityByCityNameAgentByDirByBaseOutput(ctx context.Context, cityName string, dir string, base string, params *GetV0CityByCityNameAgentByDirByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -9295,6 +9396,30 @@ func (c *Client) PatchV0CityByCityNameAgentByBaseFull(ctx context.Context, cityN
 	return c.Client.Do(req)
 }
 
+func (c *Client) MaestroCreateAgentFullWithBody(ctx context.Context, cityName string, base string, params *MaestroCreateAgentFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMaestroCreateAgentFullRequestWithBody(c.Server, cityName, base, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MaestroCreateAgentFull(ctx context.Context, cityName string, base string, params *MaestroCreateAgentFullParams, body MaestroCreateAgentFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMaestroCreateAgentFullRequest(c.Server, cityName, base, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetV0CityByCityNameAgentByBaseOutput(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetV0CityByCityNameAgentByBaseOutputRequest(c.Server, cityName, base, params)
 	if err != nil {
@@ -9441,6 +9566,30 @@ func (c *Client) PatchV0CityByCityNameAgentByDirByBaseFullWithBody(ctx context.C
 
 func (c *Client) PatchV0CityByCityNameAgentByDirByBaseFull(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, body PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPatchV0CityByCityNameAgentByDirByBaseFullRequest(c.Server, cityName, dir, base, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MaestroCreateAgentFullQualifiedWithBody(ctx context.Context, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMaestroCreateAgentFullQualifiedRequestWithBody(c.Server, cityName, dir, base, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MaestroCreateAgentFullQualified(ctx context.Context, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, body MaestroCreateAgentFullQualifiedJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMaestroCreateAgentFullQualifiedRequest(c.Server, cityName, dir, base, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -11949,6 +12098,73 @@ func NewPatchV0CityByCityNameAgentByBaseFullRequestWithBody(server string, cityN
 	return req, nil
 }
 
+// NewMaestroCreateAgentFullRequest calls the generic MaestroCreateAgentFull builder with application/json body
+func NewMaestroCreateAgentFullRequest(server string, cityName string, base string, params *MaestroCreateAgentFullParams, body MaestroCreateAgentFullJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMaestroCreateAgentFullRequestWithBody(server, cityName, base, params, "application/json", bodyReader)
+}
+
+// NewMaestroCreateAgentFullRequestWithBody generates requests for MaestroCreateAgentFull with any type of body
+func NewMaestroCreateAgentFullRequestWithBody(server string, cityName string, base string, params *MaestroCreateAgentFullParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/full", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-GC-Request", params.XGCRequest, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-GC-Request", headerParam0)
+
+	}
+
+	return req, nil
+}
+
 // NewGetV0CityByCityNameAgentByBaseOutputRequest generates requests for GetV0CityByCityNameAgentByBaseOutput
 func NewGetV0CityByCityNameAgentByBaseOutputRequest(server string, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams) (*http.Request, error) {
 	var err error
@@ -12559,6 +12775,80 @@ func NewPatchV0CityByCityNameAgentByDirByBaseFullRequestWithBody(server string, 
 
 			req.Header.Set("If-Match", headerParam1)
 		}
+
+	}
+
+	return req, nil
+}
+
+// NewMaestroCreateAgentFullQualifiedRequest calls the generic MaestroCreateAgentFullQualified builder with application/json body
+func NewMaestroCreateAgentFullQualifiedRequest(server string, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, body MaestroCreateAgentFullQualifiedJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMaestroCreateAgentFullQualifiedRequestWithBody(server, cityName, dir, base, params, "application/json", bodyReader)
+}
+
+// NewMaestroCreateAgentFullQualifiedRequestWithBody generates requests for MaestroCreateAgentFullQualified with any type of body
+func NewMaestroCreateAgentFullQualifiedRequestWithBody(server string, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "dir", dir, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/%s/full", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-GC-Request", params.XGCRequest, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-GC-Request", headerParam0)
 
 	}
 
@@ -21132,6 +21422,11 @@ type ClientWithResponsesInterface interface {
 
 	PatchV0CityByCityNameAgentByBaseFullWithResponse(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, body PatchV0CityByCityNameAgentByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByBaseFullResponse, error)
 
+	// MaestroCreateAgentFullWithBodyWithResponse request with any body
+	MaestroCreateAgentFullWithBodyWithResponse(ctx context.Context, cityName string, base string, params *MaestroCreateAgentFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MaestroCreateAgentFullResponse, error)
+
+	MaestroCreateAgentFullWithResponse(ctx context.Context, cityName string, base string, params *MaestroCreateAgentFullParams, body MaestroCreateAgentFullJSONRequestBody, reqEditors ...RequestEditorFn) (*MaestroCreateAgentFullResponse, error)
+
 	// GetV0CityByCityNameAgentByBaseOutputWithResponse request
 	GetV0CityByCityNameAgentByBaseOutputWithResponse(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseOutputResponse, error)
 
@@ -21167,6 +21462,11 @@ type ClientWithResponsesInterface interface {
 	PatchV0CityByCityNameAgentByDirByBaseFullWithBodyWithResponse(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByDirByBaseFullResponse, error)
 
 	PatchV0CityByCityNameAgentByDirByBaseFullWithResponse(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, body PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByDirByBaseFullResponse, error)
+
+	// MaestroCreateAgentFullQualifiedWithBodyWithResponse request with any body
+	MaestroCreateAgentFullQualifiedWithBodyWithResponse(ctx context.Context, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MaestroCreateAgentFullQualifiedResponse, error)
+
+	MaestroCreateAgentFullQualifiedWithResponse(ctx context.Context, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, body MaestroCreateAgentFullQualifiedJSONRequestBody, reqEditors ...RequestEditorFn) (*MaestroCreateAgentFullQualifiedResponse, error)
 
 	// GetV0CityByCityNameAgentByDirByBaseOutputWithResponse request
 	GetV0CityByCityNameAgentByDirByBaseOutputWithResponse(ctx context.Context, cityName string, dir string, base string, params *GetV0CityByCityNameAgentByDirByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByDirByBaseOutputResponse, error)
@@ -21866,6 +22166,29 @@ func (r PatchV0CityByCityNameAgentByBaseFullResponse) StatusCode() int {
 	return 0
 }
 
+type MaestroCreateAgentFullResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *AgentFullResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r MaestroCreateAgentFullResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MaestroCreateAgentFullResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetV0CityByCityNameAgentByBaseOutputResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -22089,6 +22412,29 @@ func (r PatchV0CityByCityNameAgentByDirByBaseFullResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PatchV0CityByCityNameAgentByDirByBaseFullResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MaestroCreateAgentFullQualifiedResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON201                       *AgentFullResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r MaestroCreateAgentFullQualifiedResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MaestroCreateAgentFullQualifiedResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -25226,6 +25572,23 @@ func (c *ClientWithResponses) PatchV0CityByCityNameAgentByBaseFullWithResponse(c
 	return ParsePatchV0CityByCityNameAgentByBaseFullResponse(rsp)
 }
 
+// MaestroCreateAgentFullWithBodyWithResponse request with arbitrary body returning *MaestroCreateAgentFullResponse
+func (c *ClientWithResponses) MaestroCreateAgentFullWithBodyWithResponse(ctx context.Context, cityName string, base string, params *MaestroCreateAgentFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MaestroCreateAgentFullResponse, error) {
+	rsp, err := c.MaestroCreateAgentFullWithBody(ctx, cityName, base, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMaestroCreateAgentFullResponse(rsp)
+}
+
+func (c *ClientWithResponses) MaestroCreateAgentFullWithResponse(ctx context.Context, cityName string, base string, params *MaestroCreateAgentFullParams, body MaestroCreateAgentFullJSONRequestBody, reqEditors ...RequestEditorFn) (*MaestroCreateAgentFullResponse, error) {
+	rsp, err := c.MaestroCreateAgentFull(ctx, cityName, base, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMaestroCreateAgentFullResponse(rsp)
+}
+
 // GetV0CityByCityNameAgentByBaseOutputWithResponse request returning *GetV0CityByCityNameAgentByBaseOutputResponse
 func (c *ClientWithResponses) GetV0CityByCityNameAgentByBaseOutputWithResponse(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseOutputResponse, error) {
 	rsp, err := c.GetV0CityByCityNameAgentByBaseOutput(ctx, cityName, base, params, reqEditors...)
@@ -25338,6 +25701,23 @@ func (c *ClientWithResponses) PatchV0CityByCityNameAgentByDirByBaseFullWithRespo
 		return nil, err
 	}
 	return ParsePatchV0CityByCityNameAgentByDirByBaseFullResponse(rsp)
+}
+
+// MaestroCreateAgentFullQualifiedWithBodyWithResponse request with arbitrary body returning *MaestroCreateAgentFullQualifiedResponse
+func (c *ClientWithResponses) MaestroCreateAgentFullQualifiedWithBodyWithResponse(ctx context.Context, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MaestroCreateAgentFullQualifiedResponse, error) {
+	rsp, err := c.MaestroCreateAgentFullQualifiedWithBody(ctx, cityName, dir, base, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMaestroCreateAgentFullQualifiedResponse(rsp)
+}
+
+func (c *ClientWithResponses) MaestroCreateAgentFullQualifiedWithResponse(ctx context.Context, cityName string, dir string, base string, params *MaestroCreateAgentFullQualifiedParams, body MaestroCreateAgentFullQualifiedJSONRequestBody, reqEditors ...RequestEditorFn) (*MaestroCreateAgentFullQualifiedResponse, error) {
+	rsp, err := c.MaestroCreateAgentFullQualified(ctx, cityName, dir, base, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMaestroCreateAgentFullQualifiedResponse(rsp)
 }
 
 // GetV0CityByCityNameAgentByDirByBaseOutputWithResponse request returning *GetV0CityByCityNameAgentByDirByBaseOutputResponse
@@ -27145,6 +27525,39 @@ func ParsePatchV0CityByCityNameAgentByBaseFullResponse(rsp *http.Response) (*Pat
 	return response, nil
 }
 
+// ParseMaestroCreateAgentFullResponse parses an HTTP response from a MaestroCreateAgentFullWithResponse call
+func ParseMaestroCreateAgentFullResponse(rsp *http.Response) (*MaestroCreateAgentFullResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MaestroCreateAgentFullResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AgentFullResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetV0CityByCityNameAgentByBaseOutputResponse parses an HTTP response from a GetV0CityByCityNameAgentByBaseOutputWithResponse call
 func ParseGetV0CityByCityNameAgentByBaseOutputResponse(rsp *http.Response) (*GetV0CityByCityNameAgentByBaseOutputResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -27455,6 +27868,39 @@ func ParsePatchV0CityByCityNameAgentByDirByBaseFullResponse(rsp *http.Response) 
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMaestroCreateAgentFullQualifiedResponse parses an HTTP response from a MaestroCreateAgentFullQualifiedWithResponse call
+func ParseMaestroCreateAgentFullQualifiedResponse(rsp *http.Response) (*MaestroCreateAgentFullQualifiedResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MaestroCreateAgentFullQualifiedResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AgentFullResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorModel

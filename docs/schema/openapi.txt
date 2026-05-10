@@ -81,6 +81,99 @@
         ],
         "type": "object"
       },
+      "AgentCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "drain_timeout": {
+            "description": "Go duration string.",
+            "type": "string"
+          },
+          "env": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "idle_timeout": {
+            "description": "Go duration string ('30s', '5m', '1h'). Empty leaves the agent at the city default.",
+            "type": "string"
+          },
+          "inject_fragments": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "max_active_sessions": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "min_active_sessions": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "nudge": {
+            "type": "string"
+          },
+          "pre_start": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "prompt_template": {
+            "description": "Path to a prompt template file, relative to the city root.",
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider name registered in the city's providers list.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "scale_check": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "city",
+              "rig"
+            ],
+            "type": "string"
+          },
+          "sleep_after_idle": {
+            "description": "Duration string or 'off'.",
+            "type": "string"
+          },
+          "suspended": {
+            "type": "boolean"
+          },
+          "wake_mode": {
+            "enum": [
+              "resume",
+              "fresh"
+            ],
+            "type": "string"
+          },
+          "work_dir": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider"
+        ],
+        "type": "object"
+      },
       "AgentCreatedOutputBody": {
         "additionalProperties": false,
         "properties": {
@@ -12580,6 +12673,102 @@
           }
         },
         "summary": "Patch v0 city by city name agent by base full"
+      },
+      "post": {
+        "description": "Fork-only create endpoint mirroring PATCH /full's editable shape. Returns the post-create AgentFullResponse plus ETag, so the Studio's create wizard can hand off to the edit surface without a follow-up GET.",
+        "operationId": "maestro-create-agent-full",
+        "parameters": [
+          {
+            "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+            "in": "header",
+            "name": "X-GC-Request",
+            "required": true,
+            "schema": {
+              "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent name (unqualified, no rig).",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent name (unqualified, no rig).",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentFullResponse"
+                }
+              }
+            },
+            "description": "Created",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the agent definition. Use as If-Match on the next PATCH.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Index": {
+                "schema": {
+                  "description": "Latest event sequence number.",
+                  "format": "int64",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Create an agent with the full editable subset"
       }
     },
     "/v0/city/{cityName}/agent/{base}/output": {
@@ -13493,6 +13682,112 @@
           }
         },
         "summary": "Patch v0 city by city name agent by dir by base full"
+      },
+      "post": {
+        "description": "Rig-scoped variant of POST /agent/{base}/full.",
+        "operationId": "maestro-create-agent-full-qualified",
+        "parameters": [
+          {
+            "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+            "in": "header",
+            "name": "X-GC-Request",
+            "required": true,
+            "schema": {
+              "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent directory (rig name).",
+            "in": "path",
+            "name": "dir",
+            "required": true,
+            "schema": {
+              "description": "Agent directory (rig name).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent base name.",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent base name.",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentFullResponse"
+                }
+              }
+            },
+            "description": "Created",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the agent definition. Use as If-Match on the next PATCH.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Index": {
+                "schema": {
+                  "description": "Latest event sequence number.",
+                  "format": "int64",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Create an agent in a rig with the full editable subset"
       }
     },
     "/v0/city/{cityName}/agent/{dir}/{base}/output": {

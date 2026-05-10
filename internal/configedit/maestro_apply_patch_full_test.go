@@ -35,7 +35,7 @@ idle_timeout = "30m"
 	}
 
 	cfg := readTOML(t, path)
-	mayor := findAgentByName(t, cfg.Agents, "", "mayor")
+	mayor := findAgentByName(t, cfg.Agents, "mayor")
 	if mayor.IdleTimeout != "2h" {
 		t.Errorf("IdleTimeout = %q, want 2h", mayor.IdleTimeout)
 	}
@@ -82,7 +82,7 @@ FOO = "bar"
 	}
 
 	cfg := readTOML(t, path)
-	a := findAgentByName(t, cfg.Agents, "", "polecat")
+	a := findAgentByName(t, cfg.Agents, "polecat")
 	if a.IdleTimeout != "2h" {
 		t.Errorf("IdleTimeout = %q, want 2h (only patched field)", a.IdleTimeout)
 	}
@@ -158,7 +158,7 @@ provider = "claude"
 
 	// And the merged expanded view should reflect the patch.
 	expanded := readExpandedTOML(t, path)
-	worker := findAgentByName(t, expanded.Agents, "", "worker")
+	worker := findAgentByName(t, expanded.Agents, "worker")
 	if worker.IdleTimeout != "1h" {
 		t.Errorf("expanded worker IdleTimeout = %q, want 1h", worker.IdleTimeout)
 	}
@@ -355,6 +355,87 @@ provider = "claude"
 	}
 }
 
+// TestApplyAgentPatchFull_DerivedClearsInjectFragments is the Q-103
+// regression guard at the Editor layer. A pack agent patched with
+// `InjectFragments: ["frag-a"]` lives in city.toml as
+// `[[patches.agent]] inject_fragments = ["frag-a"]`. A second PATCH with
+// `InjectFragments: []` (non-nil empty slice) MUST overwrite the prior
+// list with an empty list — the Studio's Fragments-tab "remove last
+// fragment" UX requires the clear to actually persist.
+//
+// Pre-fix this test is RED: mergeAgentPatchForFull skipped assignment
+// when `len(src.InjectFragments) == 0`, leaving the prior list in
+// place. Post-fix the gate is `src.InjectFragments != nil`, preserving
+// the empty slice as the "clear" signal.
+//
+// Note: end-to-end clear visibility from the merged expanded view also
+// depends on `internal/config.applyAgentPatchFields` honoring the same
+// non-nil-empty semantics during city load (which currently has the
+// same bug — fixed in this branch as the third leg of Q-103).
+func TestApplyAgentPatchFull_DerivedClearsInjectFragments(t *testing.T) {
+	dir := t.TempDir()
+	path := writeTOML(t, dir, `[workspace]
+name = "test-city"
+`)
+	if err := os.WriteFile(filepath.Join(dir, "pack.toml"), []byte(`[pack]
+name = "test-city"
+schema = 2
+
+[[agent]]
+name = "boot"
+provider = "claude"
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	ed := configedit.NewEditor(fsys.OSFS{}, path)
+
+	// First PATCH: set fragments to a non-empty list (creates [[patches.agent]]).
+	if err := ed.ApplyAgentPatchFull("boot", config.AgentPatch{
+		Name:            "boot",
+		InjectFragments: []string{"frag-a"},
+	}); err != nil {
+		t.Fatalf("ApplyAgentPatchFull (set): %v", err)
+	}
+
+	// Sanity: the patch block now carries ["frag-a"].
+	cfg := readTOML(t, path)
+	if len(cfg.Patches.Agents) != 1 {
+		t.Fatalf("after set: len(Patches.Agents) = %d, want 1", len(cfg.Patches.Agents))
+	}
+	if got := cfg.Patches.Agents[0].InjectFragments; len(got) != 1 || got[0] != "frag-a" {
+		t.Fatalf("after set: InjectFragments = %v, want [frag-a]", got)
+	}
+
+	// Second PATCH: clear with non-nil empty slice. THIS is the Q-103
+	// reproduction — pre-fix the merge skips this entirely.
+	if err := ed.ApplyAgentPatchFull("boot", config.AgentPatch{
+		Name:            "boot",
+		InjectFragments: []string{},
+	}); err != nil {
+		t.Fatalf("ApplyAgentPatchFull (clear): %v", err)
+	}
+
+	cfg = readTOML(t, path)
+	if len(cfg.Patches.Agents) != 1 {
+		t.Fatalf("after clear: len(Patches.Agents) = %d, want 1 (merge, not append)", len(cfg.Patches.Agents))
+	}
+	got := cfg.Patches.Agents[0].InjectFragments
+	if len(got) != 0 {
+		t.Fatalf("after clear: InjectFragments = %v, want empty (clear persisted)", got)
+	}
+
+	// And the merged expanded view must reflect the cleared list.
+	// This is the leg that ALSO depends on the upstream fix to
+	// applyAgentPatchFields — without it, expanded would still show
+	// ["frag-a"] from the first patch persisted in the prior state.
+	expanded := readExpandedTOML(t, path)
+	a := findAgentByName(t, expanded.Agents, "boot")
+	if len(a.InjectFragments) != 0 {
+		t.Fatalf("expanded after clear: InjectFragments = %v, want empty", a.InjectFragments)
+	}
+}
+
 // TestApplyAgentPatchFull_NotFound exercises the sentinel-error contract.
 // Handlers in internal/api map configedit.ErrNotFound to 404 problem
 // details via mutationError, so the Editor must return an error wrapping
@@ -377,15 +458,17 @@ func TestApplyAgentPatchFull_NotFound(t *testing.T) {
 
 // findAgentByName is a small helper for the maestro patch tests — the
 // existing findAgent helper at configedit_test.go takes a config.City,
-// but the patch-full tests want to assert on a slice directly so we can
-// match by qualified identity (dir, name).
-func findAgentByName(t *testing.T, agents []config.Agent, dir, name string) config.Agent {
+// but the patch-full tests want to assert on a slice directly. Today
+// every caller passes `dir=""` so the parameter was dropped to keep
+// the linter (unparam) honest; if a future test needs to disambiguate
+// rig-scoped duplicates, add a sibling helper with the full identity.
+func findAgentByName(t *testing.T, agents []config.Agent, name string) config.Agent {
 	t.Helper()
 	for _, a := range agents {
-		if a.Dir == dir && a.Name == name {
+		if a.Dir == "" && a.Name == name {
 			return a
 		}
 	}
-	t.Fatalf("agent %q (dir=%q) not found in %d agents", name, dir, len(agents))
+	t.Fatalf("agent %q not found in %d agents", name, len(agents))
 	return config.Agent{}
 }

@@ -127,6 +127,49 @@ func TestBuildConfigAgentPatch_TableDriven(t *testing.T) {
 	}
 }
 
+// TestBuildConfigAgentPatch_EmptyInjectFragmentsPropagatesAsClear is the
+// Q-103 regression guard. The Studio's Fragments tab dispatches PATCH
+// /full with `inject_fragments: []` (non-nil empty slice) when the user
+// clears the list. The wire-to-config mapping must distinguish that
+// "explicit clear" from `inject_fragments` simply being absent (nil
+// slice = "leave unchanged"), otherwise the clear silently no-ops.
+//
+// Pre-fix this test is RED: BuildConfigAgentPatch gated assignment on
+// `len(req.InjectFragments) > 0`, treating `[]` and `nil` identically.
+// Post-fix the gate is `req.InjectFragments != nil`, preserving the
+// empty slice as the "clear" signal all the way down to ApplyPatches.
+func TestBuildConfigAgentPatch_EmptyInjectFragmentsPropagatesAsClear(t *testing.T) {
+	t.Parallel()
+
+	got := BuildConfigAgentPatch(AgentPatchRequest{
+		InjectFragments: []string{},
+	}, "", "boot")
+
+	if got.InjectFragments == nil {
+		t.Fatalf("InjectFragments = nil, want non-nil empty slice []string{} (clear signal)")
+	}
+	if len(got.InjectFragments) != 0 {
+		t.Fatalf("InjectFragments = %v, want empty slice", got.InjectFragments)
+	}
+}
+
+// TestBuildConfigAgentPatch_OmittedInjectFragmentsStaysNil is the
+// negative-side guard for Q-103: a request with no inject_fragments key
+// (nil slice) must continue to mean "leave unchanged" and produce a nil
+// slice in the resulting AgentPatch. This pins the distinction
+// preserved by the != nil gate.
+func TestBuildConfigAgentPatch_OmittedInjectFragmentsStaysNil(t *testing.T) {
+	t.Parallel()
+
+	got := BuildConfigAgentPatch(AgentPatchRequest{
+		InjectFragments: nil,
+	}, "", "boot")
+
+	if got.InjectFragments != nil {
+		t.Fatalf("InjectFragments = %v, want nil (no-change signal)", got.InjectFragments)
+	}
+}
+
 func TestBuildConfigAgentPatch_OmitsPoolWhenAllPoolFieldsAbsent(t *testing.T) {
 	t.Parallel()
 
