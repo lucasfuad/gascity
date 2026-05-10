@@ -33,14 +33,12 @@ func TestAgentConfigUpdatedPayload_Registered(t *testing.T) {
 // TestAgentConfigUpdatedPayload_JSONRoundtrip pins the wire encoding so
 // a rename of a field on the Go struct (e.g. CityName → City) cannot
 // silently break frontend consumers that key off the exact JSON names.
-// The expected JSON below is the contract documented in the
-// maestro-stack-contracts skill.
 func TestAgentConfigUpdatedPayload_JSONRoundtrip(t *testing.T) {
 	t.Parallel()
 
 	in := AgentConfigUpdatedPayload{
-		CityName:      "fuad-teste",
-		QualifiedName: "gastown.boot",
+		CityName:      "test-city",
+		QualifiedName: "myrig/worker",
 		ETag:          `"deadbeef00000000"`,
 		Operation:     AgentConfigOperationUpdate,
 	}
@@ -48,7 +46,7 @@ func TestAgentConfigUpdatedPayload_JSONRoundtrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
-	want := `{"city_name":"fuad-teste","qualified_name":"gastown.boot","etag":"\"deadbeef00000000\"","operation":"update"}`
+	want := `{"city_name":"test-city","qualified_name":"myrig/worker","etag":"\"deadbeef00000000\"","operation":"update"}`
 	if string(raw) != want {
 		t.Fatalf("wire JSON =\n  %s\nwant\n  %s", raw, want)
 	}
