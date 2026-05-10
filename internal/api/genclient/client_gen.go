@@ -18,6 +18,24 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for AgentConfigUpdatedPayloadOperation.
+const (
+	Create AgentConfigUpdatedPayloadOperation = "create"
+	Update AgentConfigUpdatedPayloadOperation = "update"
+)
+
+// Valid indicates whether the value is a known member of the AgentConfigUpdatedPayloadOperation enum.
+func (e AgentConfigUpdatedPayloadOperation) Valid() bool {
+	switch e {
+	case Create:
+		return true
+	case Update:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentCreateRequestScope.
 const (
 	AgentCreateRequestScopeCity AgentCreateRequestScope = "city"
@@ -303,6 +321,24 @@ type AdapterEventPayload struct {
 	AccountId string `json:"account_id"`
 	Provider  string `json:"provider"`
 }
+
+// AgentConfigUpdatedPayload defines model for AgentConfigUpdatedPayload.
+type AgentConfigUpdatedPayload struct {
+	// CityName City the agent belongs to.
+	CityName string `json:"city_name"`
+
+	// Etag Opaque content hash of the agent definition after the mutation. Same value as the ETag response header.
+	Etag string `json:"etag"`
+
+	// Operation Which write path produced the event: "create" for POST /full, "update" for PATCH /full.
+	Operation AgentConfigUpdatedPayloadOperation `json:"operation"`
+
+	// QualifiedName Qualified agent name (dir/base or base) — same shape used by GET /agent/{...}/full.
+	QualifiedName string `json:"qualified_name"`
+}
+
+// AgentConfigUpdatedPayloadOperation Which write path produced the event: "create" for POST /full, "update" for PATCH /full.
+type AgentConfigUpdatedPayloadOperation string
 
 // AgentCreateInputBody defines model for AgentCreateInputBody.
 type AgentCreateInputBody struct {
@@ -2840,6 +2876,18 @@ type TypedEventStreamEnvelope struct {
 	union json.RawMessage
 }
 
+// TypedEventStreamEnvelopeAgentConfigUpdated defines model for TypedEventStreamEnvelopeAgentConfigUpdated.
+type TypedEventStreamEnvelopeAgentConfigUpdated struct {
+	Actor    string                    `json:"actor"`
+	Message  *string                   `json:"message,omitempty"`
+	Payload  AgentConfigUpdatedPayload `json:"payload"`
+	Seq      int64                     `json:"seq"`
+	Subject  *string                   `json:"subject,omitempty"`
+	Ts       time.Time                 `json:"ts"`
+	Type     string                    `json:"type"`
+	Workflow *WorkflowEventProjection  `json:"workflow,omitempty"`
+}
+
 // TypedEventStreamEnvelopeBeadClosed defines model for TypedEventStreamEnvelopeBeadClosed.
 type TypedEventStreamEnvelopeBeadClosed struct {
 	Actor    string                   `json:"actor"`
@@ -3395,6 +3443,19 @@ type TypedEventStreamEnvelopeWorkerOperation struct {
 // TypedTaggedEventStreamEnvelope Discriminated union of supervisor event stream envelopes. Each variant constrains the envelope type and payload schema together and includes the source city.
 type TypedTaggedEventStreamEnvelope struct {
 	union json.RawMessage
+}
+
+// TypedTaggedEventStreamEnvelopeAgentConfigUpdated defines model for TypedTaggedEventStreamEnvelopeAgentConfigUpdated.
+type TypedTaggedEventStreamEnvelopeAgentConfigUpdated struct {
+	Actor    string                    `json:"actor"`
+	City     string                    `json:"city"`
+	Message  *string                   `json:"message,omitempty"`
+	Payload  AgentConfigUpdatedPayload `json:"payload"`
+	Seq      int64                     `json:"seq"`
+	Subject  *string                   `json:"subject,omitempty"`
+	Ts       time.Time                 `json:"ts"`
+	Type     string                    `json:"type"`
+	Workflow *WorkflowEventProjection  `json:"workflow,omitempty"`
 }
 
 // TypedTaggedEventStreamEnvelopeBeadClosed defines model for TypedTaggedEventStreamEnvelopeBeadClosed.
@@ -5271,6 +5332,32 @@ func (t *EventPayload) MergeAdapterEventPayload(v AdapterEventPayload) error {
 	return err
 }
 
+// AsAgentConfigUpdatedPayload returns the union data inside the EventPayload as a AgentConfigUpdatedPayload
+func (t EventPayload) AsAgentConfigUpdatedPayload() (AgentConfigUpdatedPayload, error) {
+	var body AgentConfigUpdatedPayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromAgentConfigUpdatedPayload overwrites any union data inside the EventPayload as the provided AgentConfigUpdatedPayload
+func (t *EventPayload) FromAgentConfigUpdatedPayload(v AgentConfigUpdatedPayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeAgentConfigUpdatedPayload performs a merge with any union data inside the EventPayload, using the provided AgentConfigUpdatedPayload
+func (t *EventPayload) MergeAgentConfigUpdatedPayload(v AgentConfigUpdatedPayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsBeadEventPayload returns the union data inside the EventPayload as a BeadEventPayload
 func (t EventPayload) AsBeadEventPayload() (BeadEventPayload, error) {
 	var body BeadEventPayload
@@ -5782,6 +5869,34 @@ func (t SessionStreamCommonEvent) MarshalJSON() ([]byte, error) {
 
 func (t *SessionStreamCommonEvent) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsTypedEventStreamEnvelopeAgentConfigUpdated returns the union data inside the TypedEventStreamEnvelope as a TypedEventStreamEnvelopeAgentConfigUpdated
+func (t TypedEventStreamEnvelope) AsTypedEventStreamEnvelopeAgentConfigUpdated() (TypedEventStreamEnvelopeAgentConfigUpdated, error) {
+	var body TypedEventStreamEnvelopeAgentConfigUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromTypedEventStreamEnvelopeAgentConfigUpdated overwrites any union data inside the TypedEventStreamEnvelope as the provided TypedEventStreamEnvelopeAgentConfigUpdated
+func (t *TypedEventStreamEnvelope) FromTypedEventStreamEnvelopeAgentConfigUpdated(v TypedEventStreamEnvelopeAgentConfigUpdated) error {
+	v.Type = "agent.config.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeTypedEventStreamEnvelopeAgentConfigUpdated performs a merge with any union data inside the TypedEventStreamEnvelope, using the provided TypedEventStreamEnvelopeAgentConfigUpdated
+func (t *TypedEventStreamEnvelope) MergeTypedEventStreamEnvelopeAgentConfigUpdated(v TypedEventStreamEnvelopeAgentConfigUpdated) error {
+	v.Type = "agent.config.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
 	return err
 }
 
@@ -7089,6 +7204,8 @@ func (t TypedEventStreamEnvelope) ValueByDiscriminator() (interface{}, error) {
 	switch discriminator {
 	case "TypedEventStreamEnvelopeCustom":
 		return t.AsTypedEventStreamEnvelopeCustom()
+	case "agent.config.updated":
+		return t.AsTypedEventStreamEnvelopeAgentConfigUpdated()
 	case "bead.closed":
 		return t.AsTypedEventStreamEnvelopeBeadClosed()
 	case "bead.created":
@@ -7191,6 +7308,34 @@ func (t TypedEventStreamEnvelope) MarshalJSON() ([]byte, error) {
 
 func (t *TypedEventStreamEnvelope) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsTypedTaggedEventStreamEnvelopeAgentConfigUpdated returns the union data inside the TypedTaggedEventStreamEnvelope as a TypedTaggedEventStreamEnvelopeAgentConfigUpdated
+func (t TypedTaggedEventStreamEnvelope) AsTypedTaggedEventStreamEnvelopeAgentConfigUpdated() (TypedTaggedEventStreamEnvelopeAgentConfigUpdated, error) {
+	var body TypedTaggedEventStreamEnvelopeAgentConfigUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromTypedTaggedEventStreamEnvelopeAgentConfigUpdated overwrites any union data inside the TypedTaggedEventStreamEnvelope as the provided TypedTaggedEventStreamEnvelopeAgentConfigUpdated
+func (t *TypedTaggedEventStreamEnvelope) FromTypedTaggedEventStreamEnvelopeAgentConfigUpdated(v TypedTaggedEventStreamEnvelopeAgentConfigUpdated) error {
+	v.Type = "agent.config.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeTypedTaggedEventStreamEnvelopeAgentConfigUpdated performs a merge with any union data inside the TypedTaggedEventStreamEnvelope, using the provided TypedTaggedEventStreamEnvelopeAgentConfigUpdated
+func (t *TypedTaggedEventStreamEnvelope) MergeTypedTaggedEventStreamEnvelopeAgentConfigUpdated(v TypedTaggedEventStreamEnvelopeAgentConfigUpdated) error {
+	v.Type = "agent.config.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
 	return err
 }
 
@@ -8498,6 +8643,8 @@ func (t TypedTaggedEventStreamEnvelope) ValueByDiscriminator() (interface{}, err
 	switch discriminator {
 	case "TypedTaggedEventStreamEnvelopeCustom":
 		return t.AsTypedTaggedEventStreamEnvelopeCustom()
+	case "agent.config.updated":
+		return t.AsTypedTaggedEventStreamEnvelopeAgentConfigUpdated()
 	case "bead.closed":
 		return t.AsTypedTaggedEventStreamEnvelopeBeadClosed()
 	case "bead.created":

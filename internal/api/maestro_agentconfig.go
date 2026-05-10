@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"github.com/gastownhall/gascity/internal/config"
+	"github.com/gastownhall/gascity/internal/events"
 	"github.com/gastownhall/gascity/internal/fsys"
 	"github.com/gastownhall/gascity/internal/maestro/agentconfig"
 )
@@ -204,6 +206,8 @@ func (s *Server) maestroAgentPatchFullByName(ctx context.Context, name, ifMatch 
 		return nil, err
 	}
 
+	s.recordAgentConfigUpdated(name, post.ETag, AgentConfigOperationUpdate)
+
 	return &MaestroAgentPatchFullOutput{
 		Index: post.Index,
 		ETag:  post.ETag,
@@ -305,11 +309,50 @@ func (s *Server) maestroAgentCreateFullByName(ctx context.Context, dir, base str
 	if err != nil {
 		return nil, err
 	}
+
+	s.recordAgentConfigUpdated(qualifiedName, post.ETag, AgentConfigOperationCreate)
+
 	return &MaestroAgentCreateFullOutput{
 		Index: post.Index,
 		ETag:  post.ETag,
 		Body:  post.Body,
 	}, nil
+}
+
+// recordAgentConfigUpdated emits an agent.config.updated event on the
+// per-city event bus so SSE subscribers can invalidate a cached agent
+// definition (or refresh the agent list on create) without polling.
+// Best-effort: silently skips if no event provider is configured —
+// matching the contract used by recordMailEvent / recordExtMsgEvent
+// for the upstream event surfaces.
+//
+// The payload's ETag must equal the one returned on the matching HTTP
+// response header (callers are expected to pass the post-mutation
+// ETag); see maestro_event_payloads.go for the wire shape.
+func (s *Server) recordAgentConfigUpdated(qualifiedName, etag, operation string) {
+	ep := s.state.EventProvider()
+	if ep == nil {
+		return
+	}
+	payload, err := json.Marshal(AgentConfigUpdatedPayload{
+		CityName:      s.state.CityName(),
+		QualifiedName: qualifiedName,
+		ETag:          etag,
+		Operation:     operation,
+	})
+	if err != nil {
+		// Marshal can only fail on cyclic graphs / unsupported types;
+		// every field above is a plain string. Dropping the event on
+		// this impossible-in-practice path matches the best-effort
+		// contract used by every other supervisor event emitter.
+		return
+	}
+	ep.Record(events.Event{
+		Type:    events.AgentConfigUpdated,
+		Actor:   "maestro",
+		Subject: qualifiedName,
+		Payload: payload,
+	})
 }
 
 // MaestroAgentGetPromptTemplateInput is the Huma input for

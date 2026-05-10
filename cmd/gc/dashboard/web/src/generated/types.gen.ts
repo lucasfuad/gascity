@@ -15,6 +15,25 @@ export type AdapterEventPayload = {
     provider: string;
 };
 
+export type AgentConfigUpdatedPayload = {
+    /**
+     * City the agent belongs to.
+     */
+    city_name: string;
+    /**
+     * Opaque content hash of the agent definition after the mutation. Same value as the ETag response header.
+     */
+    etag: string;
+    /**
+     * Which write path produced the event: "create" for POST /full, "update" for PATCH /full.
+     */
+    operation: 'create' | 'update';
+    /**
+     * Qualified agent name (dir/base or base) — same shape used by GET /agent/{...}/full.
+     */
+    qualified_name: string;
+};
+
 export type AgentCreateInputBody = {
     /**
      * Working directory (rig name).
@@ -851,7 +870,7 @@ export type EventEmitRequest = {
     type: string;
 };
 
-export type EventPayload = AdapterEventPayload | BeadEventPayload | BoundEventPayload | CityCreateSucceededPayload | CityLifecyclePayload | CityUnregisterSucceededPayload | GroupCreatedEventPayload | InboundEventPayload | MailEventPayload | NoPayload | OutboundEventPayload | RequestFailedPayload | SessionCreateSucceededPayload | SessionMessageSucceededPayload | SessionSubmitSucceededPayload | UnboundEventPayload | WorkerOperationEventPayload;
+export type EventPayload = AdapterEventPayload | AgentConfigUpdatedPayload | BeadEventPayload | BoundEventPayload | CityCreateSucceededPayload | CityLifecyclePayload | CityUnregisterSucceededPayload | GroupCreatedEventPayload | InboundEventPayload | MailEventPayload | NoPayload | OutboundEventPayload | RequestFailedPayload | SessionCreateSucceededPayload | SessionMessageSucceededPayload | SessionSubmitSucceededPayload | UnboundEventPayload | WorkerOperationEventPayload;
 
 export type EventStreamEnvelope = {
     actor: string;
@@ -2960,6 +2979,8 @@ export type TranscriptProvenance = 'live' | 'hydrated';
  * Discriminated union of city event stream envelopes. Each variant constrains the envelope type and payload schema together.
  */
 export type TypedEventStreamEnvelope = ({
+    type: 'agent.config.updated';
+} & TypedEventStreamEnvelopeAgentConfigUpdated) | ({
     type: 'bead.closed';
 } & TypedEventStreamEnvelopeBeadClosed) | ({
     type: 'bead.created';
@@ -3052,6 +3073,20 @@ export type TypedEventStreamEnvelope = ({
 } & TypedEventStreamEnvelopeWorkerOperation) | ({
     type: 'TypedEventStreamEnvelopeCustom';
 } & TypedEventStreamEnvelopeCustom);
+
+/**
+ * TypedEventStreamEnvelope agent.config.updated
+ */
+export type TypedEventStreamEnvelopeAgentConfigUpdated = {
+    actor: string;
+    message?: string;
+    payload: AgentConfigUpdatedPayload;
+    seq: number;
+    subject?: string;
+    ts: string;
+    type: 'agent.config.updated';
+    workflow?: WorkflowEventProjection;
+};
 
 /**
  * TypedEventStreamEnvelope bead.closed
@@ -3703,6 +3738,8 @@ export type TypedEventStreamEnvelopeWorkerOperation = {
  * Discriminated union of supervisor event stream envelopes. Each variant constrains the envelope type and payload schema together and includes the source city.
  */
 export type TypedTaggedEventStreamEnvelope = ({
+    type: 'agent.config.updated';
+} & TypedTaggedEventStreamEnvelopeAgentConfigUpdated) | ({
     type: 'bead.closed';
 } & TypedTaggedEventStreamEnvelopeBeadClosed) | ({
     type: 'bead.created';
@@ -3795,6 +3832,21 @@ export type TypedTaggedEventStreamEnvelope = ({
 } & TypedTaggedEventStreamEnvelopeWorkerOperation) | ({
     type: 'TypedTaggedEventStreamEnvelopeCustom';
 } & TypedTaggedEventStreamEnvelopeCustom);
+
+/**
+ * TypedTaggedEventStreamEnvelope agent.config.updated
+ */
+export type TypedTaggedEventStreamEnvelopeAgentConfigUpdated = {
+    actor: string;
+    city: string;
+    message?: string;
+    payload: AgentConfigUpdatedPayload;
+    seq: number;
+    subject?: string;
+    ts: string;
+    type: 'agent.config.updated';
+    workflow?: WorkflowEventProjection;
+};
 
 /**
  * TypedTaggedEventStreamEnvelope bead.closed

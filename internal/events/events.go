@@ -69,6 +69,12 @@ const (
 	ExtMsgAdapterRemoved = "extmsg.adapter_removed"
 	ExtMsgInbound        = "extmsg.inbound"
 	ExtMsgOutbound       = "extmsg.outbound"
+
+	// Agent configuration mutation events. Emitted by the maestro fork
+	// when an agent's persisted definition changes via PATCH /full or
+	// POST /full so SSE subscribers can invalidate cached ETags and
+	// stay in sync without polling.
+	AgentConfigUpdated = "agent.config.updated"
 )
 
 // KnownEventTypes lists every event-type constant this package defines.
@@ -94,6 +100,7 @@ var KnownEventTypes = []string{
 	ExtMsgBound, ExtMsgUnbound, ExtMsgGroupCreated,
 	ExtMsgAdapterAdded, ExtMsgAdapterRemoved,
 	ExtMsgInbound, ExtMsgOutbound,
+	AgentConfigUpdated,
 }
 
 // Event is a single recorded occurrence in the system.
