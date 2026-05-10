@@ -94,13 +94,13 @@ func mergeAgentPatchForFull(dst *config.AgentPatch, src config.AgentPatch) {
 		dst.PreStart = append([]string(nil), src.PreStart...)
 	}
 	// InjectFragments uses presence-aware merge mirroring upstream
-	// config.AgentPatch.InjectFragments *[]string semantics: nil means
-	// "leave unchanged", non-nil (even empty pointer) means "replace".
-	// The empty case lets the Studio's Fragments-tab clear UX persist
-	// as `inject_fragments = []` in [[patches.agent]] on disk.
+	// config.AgentPatch.InjectFragments *[]string semantics: nil pointer
+	// means "leave unchanged"; a non-nil pointer (even to an empty
+	// slice) is copied through and serialized as `inject_fragments = []`
+	// (or the populated list). Uses config.Fragments to keep allocation
+	// + cloning consistent with the upstream constructor.
 	if src.InjectFragments != nil {
-		cloned := append([]string(nil), (*src.InjectFragments)...)
-		dst.InjectFragments = &cloned
+		dst.InjectFragments = config.Fragments((*src.InjectFragments)...)
 	}
 	if src.Pool != nil {
 		if dst.Pool == nil {

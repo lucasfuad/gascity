@@ -393,7 +393,7 @@ provider = "claude"
 	// First PATCH: set fragments to a non-empty list (creates [[patches.agent]]).
 	if err := ed.ApplyAgentPatchFull("boot", config.AgentPatch{
 		Name:            "boot",
-		InjectFragments: []string{"frag-a"},
+		InjectFragments: config.Fragments("frag-a"),
 	}); err != nil {
 		t.Fatalf("ApplyAgentPatchFull (set): %v", err)
 	}
@@ -403,15 +403,19 @@ provider = "claude"
 	if len(cfg.Patches.Agents) != 1 {
 		t.Fatalf("after set: len(Patches.Agents) = %d, want 1", len(cfg.Patches.Agents))
 	}
-	if got := cfg.Patches.Agents[0].InjectFragments; len(got) != 1 || got[0] != "frag-a" {
+	got := cfg.Patches.Agents[0].InjectFragments
+	if got == nil || len(*got) != 1 || (*got)[0] != "frag-a" {
 		t.Fatalf("after set: InjectFragments = %v, want [frag-a]", got)
 	}
 
-	// Second PATCH: clear with non-nil empty slice. THIS is the Q-103
-	// reproduction — pre-fix the merge skips this entirely.
+	// Second PATCH: clear with non-nil empty slice (signaled via the
+	// Fragments() helper — calling it with zero args produces the
+	// canonical *[]string{} clear sentinel). Pre-D-015 this would write
+	// `[]string{}` into the patch struct only to have TOML's omitempty
+	// drop it on encode, leaking the pack baseline back through reload.
 	if err := ed.ApplyAgentPatchFull("boot", config.AgentPatch{
 		Name:            "boot",
-		InjectFragments: []string{},
+		InjectFragments: config.Fragments(),
 	}); err != nil {
 		t.Fatalf("ApplyAgentPatchFull (clear): %v", err)
 	}
@@ -420,9 +424,12 @@ provider = "claude"
 	if len(cfg.Patches.Agents) != 1 {
 		t.Fatalf("after clear: len(Patches.Agents) = %d, want 1 (merge, not append)", len(cfg.Patches.Agents))
 	}
-	got := cfg.Patches.Agents[0].InjectFragments
-	if len(got) != 0 {
-		t.Fatalf("after clear: InjectFragments = %v, want empty (clear persisted)", got)
+	got = cfg.Patches.Agents[0].InjectFragments
+	if got == nil {
+		t.Fatalf("after clear: InjectFragments = nil, want non-nil empty pointer (clear signal lost)")
+	}
+	if len(*got) != 0 {
+		t.Fatalf("after clear: InjectFragments = %v, want empty (clear persisted)", *got)
 	}
 
 	// And the merged expanded view must reflect the cleared list.
@@ -433,6 +440,69 @@ provider = "claude"
 	a := findAgentByName(t, expanded.Agents, "boot")
 	if len(a.InjectFragments) != 0 {
 		t.Fatalf("expanded after clear: InjectFragments = %v, want empty", a.InjectFragments)
+	}
+}
+
+// TestApplyAgentPatchFull_DerivedClearsInjectFragmentsAgainstPackBase
+// is the deeper Q-103 repro raised by cross-review: when the PACK agent
+// already declares a non-empty inject_fragments list, a PATCH clear via
+// `[]` MUST survive write → reload → expand. Without D-015's *[]string
+// type, the empty-list signal hits BurntSushi/toml's omitempty path and
+// vanishes on encode, letting the pack baseline leak back through the
+// next load. The original Phase 9 fix (presence-aware merge) was
+// insufficient on its own — the wire encoding was the missing leg.
+//
+// This is the canary: if AgentPatch.InjectFragments ever regresses to
+// `[]string` (or any non-pointer presence-blind type), the assertion
+// fires before the bug ships.
+func TestApplyAgentPatchFull_DerivedClearsInjectFragmentsAgainstPackBase(t *testing.T) {
+	dir := t.TempDir()
+	path := writeTOML(t, dir, `[workspace]
+name = "test-city"
+`)
+	if err := os.WriteFile(filepath.Join(dir, "pack.toml"), []byte(`[pack]
+name = "test-city"
+schema = 2
+
+[[agent]]
+name = "boot"
+provider = "claude"
+inject_fragments = ["base-frag"]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	ed := configedit.NewEditor(fsys.OSFS{}, path)
+
+	// PATCH clear directly — no prior set. Pack declares ["base-frag"];
+	// the clear must override that all the way through expand.
+	if err := ed.ApplyAgentPatchFull("boot", config.AgentPatch{
+		Name:            "boot",
+		InjectFragments: config.Fragments(),
+	}); err != nil {
+		t.Fatalf("ApplyAgentPatchFull (clear): %v", err)
+	}
+
+	// Raw patch block on disk must carry inject_fragments = [].
+	cfg := readTOML(t, path)
+	if len(cfg.Patches.Agents) != 1 {
+		t.Fatalf("len(Patches.Agents) = %d, want 1", len(cfg.Patches.Agents))
+	}
+	got := cfg.Patches.Agents[0].InjectFragments
+	if got == nil {
+		t.Fatalf("patches.agent[0].InjectFragments = nil after clear; pointer should be non-nil empty (TOML serialization lost the signal)")
+	}
+	if len(*got) != 0 {
+		t.Fatalf("patches.agent[0].InjectFragments = %v after clear, want empty list", *got)
+	}
+
+	// Expanded view must reflect the cleared list (pack baseline
+	// overridden). This is the end-to-end leg the original Phase 9
+	// test missed because its pack fixture had no inject_fragments.
+	expanded := readExpandedTOML(t, path)
+	a := findAgentByName(t, expanded.Agents, "boot")
+	if len(a.InjectFragments) != 0 {
+		t.Fatalf("expanded boot.InjectFragments = %v after clear, want empty (clear must override pack baseline)", a.InjectFragments)
 	}
 }
 

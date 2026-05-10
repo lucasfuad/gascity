@@ -134,22 +134,23 @@ func TestBuildConfigAgentPatch_TableDriven(t *testing.T) {
 // "explicit clear" from `inject_fragments` simply being absent (nil
 // slice = "leave unchanged"), otherwise the clear silently no-ops.
 //
-// Pre-fix this test is RED: BuildConfigAgentPatch gated assignment on
-// `len(req.InjectFragments) > 0`, treating `[]` and `nil` identically.
-// Post-fix the gate is `req.InjectFragments != nil`, preserving the
-// empty slice as the "clear" signal all the way down to ApplyPatches.
+// Per upstream PR #1952 AgentPatch.InjectFragments is *[]string so the
+// clear signal survives TOML encode (omitempty would otherwise drop a
+// bare `[]string{}`). This test pins the conversion: non-nil request
+// pointer → non-nil pointer on the patch, regardless of whether the
+// pointed-to slice is empty or populated.
 func TestBuildConfigAgentPatch_EmptyInjectFragmentsPropagatesAsClear(t *testing.T) {
 	t.Parallel()
 
 	got := BuildConfigAgentPatch(AgentPatchRequest{
-		InjectFragments: []string{},
+		InjectFragments: &[]string{},
 	}, "", "boot")
 
 	if got.InjectFragments == nil {
-		t.Fatalf("InjectFragments = nil, want non-nil empty slice []string{} (clear signal)")
+		t.Fatalf("InjectFragments = nil, want non-nil pointer to empty slice (clear signal)")
 	}
-	if len(got.InjectFragments) != 0 {
-		t.Fatalf("InjectFragments = %v, want empty slice", got.InjectFragments)
+	if len(*got.InjectFragments) != 0 {
+		t.Fatalf("InjectFragments = %v, want empty slice", *got.InjectFragments)
 	}
 }
 
