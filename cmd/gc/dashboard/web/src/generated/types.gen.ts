@@ -1888,6 +1888,28 @@ export type PoolOverride = {
     OnDeath: string | null;
 };
 
+export type PromptTemplatePutBody = {
+    /**
+     * UTF-8 contents to write to the template file.
+     */
+    content: string;
+};
+
+export type PromptTemplateResponse = {
+    /**
+     * UTF-8 contents of the template file.
+     */
+    content: string;
+    /**
+     * Last modification time on disk (RFC 3339).
+     */
+    mtime: string;
+    /**
+     * Configured prompt_template path (relative to city dir or absolute, as stored in city.toml).
+     */
+    path: string;
+};
+
 export type ProviderCreateInputBody = {
     /**
      * ACP transport command arguments override.
@@ -5036,6 +5058,84 @@ export type StreamAgentOutputResponses = {
 
 export type StreamAgentOutputResponse = StreamAgentOutputResponses[keyof StreamAgentOutputResponses];
 
+export type GetV0CityByCityNameAgentByBasePromptTemplateData = {
+    body?: never;
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent name (unqualified, no rig).
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{base}/prompt-template';
+};
+
+export type GetV0CityByCityNameAgentByBasePromptTemplateErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetV0CityByCityNameAgentByBasePromptTemplateError = GetV0CityByCityNameAgentByBasePromptTemplateErrors[keyof GetV0CityByCityNameAgentByBasePromptTemplateErrors];
+
+export type GetV0CityByCityNameAgentByBasePromptTemplateResponses = {
+    /**
+     * OK
+     */
+    200: PromptTemplateResponse;
+};
+
+export type GetV0CityByCityNameAgentByBasePromptTemplateResponse = GetV0CityByCityNameAgentByBasePromptTemplateResponses[keyof GetV0CityByCityNameAgentByBasePromptTemplateResponses];
+
+export type PutV0CityByCityNameAgentByBasePromptTemplateData = {
+    body: PromptTemplatePutBody;
+    headers: {
+        /**
+         * Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+         */
+        'X-GC-Request': string;
+        /**
+         * ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency.
+         */
+        'If-Match'?: string;
+    };
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent name (unqualified, no rig).
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{base}/prompt-template';
+};
+
+export type PutV0CityByCityNameAgentByBasePromptTemplateErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type PutV0CityByCityNameAgentByBasePromptTemplateError = PutV0CityByCityNameAgentByBasePromptTemplateErrors[keyof PutV0CityByCityNameAgentByBasePromptTemplateErrors];
+
+export type PutV0CityByCityNameAgentByBasePromptTemplateResponses = {
+    /**
+     * OK
+     */
+    200: PromptTemplateResponse;
+};
+
+export type PutV0CityByCityNameAgentByBasePromptTemplateResponse = PutV0CityByCityNameAgentByBasePromptTemplateResponses[keyof PutV0CityByCityNameAgentByBasePromptTemplateResponses];
+
 export type PostV0CityByCityNameAgentByBaseByActionData = {
     body?: never;
     headers: {
@@ -5406,6 +5506,92 @@ export type StreamAgentOutputQualifiedResponses = {
 };
 
 export type StreamAgentOutputQualifiedResponse = StreamAgentOutputQualifiedResponses[keyof StreamAgentOutputQualifiedResponses];
+
+export type GetV0CityByCityNameAgentByDirByBasePromptTemplateData = {
+    body?: never;
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent directory (rig name).
+         */
+        dir: string;
+        /**
+         * Agent base name.
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{dir}/{base}/prompt-template';
+};
+
+export type GetV0CityByCityNameAgentByDirByBasePromptTemplateErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetV0CityByCityNameAgentByDirByBasePromptTemplateError = GetV0CityByCityNameAgentByDirByBasePromptTemplateErrors[keyof GetV0CityByCityNameAgentByDirByBasePromptTemplateErrors];
+
+export type GetV0CityByCityNameAgentByDirByBasePromptTemplateResponses = {
+    /**
+     * OK
+     */
+    200: PromptTemplateResponse;
+};
+
+export type GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse = GetV0CityByCityNameAgentByDirByBasePromptTemplateResponses[keyof GetV0CityByCityNameAgentByDirByBasePromptTemplateResponses];
+
+export type PutV0CityByCityNameAgentByDirByBasePromptTemplateData = {
+    body: PromptTemplatePutBody;
+    headers: {
+        /**
+         * Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+         */
+        'X-GC-Request': string;
+        /**
+         * ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency.
+         */
+        'If-Match'?: string;
+    };
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent directory (rig name).
+         */
+        dir: string;
+        /**
+         * Agent base name.
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{dir}/{base}/prompt-template';
+};
+
+export type PutV0CityByCityNameAgentByDirByBasePromptTemplateErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type PutV0CityByCityNameAgentByDirByBasePromptTemplateError = PutV0CityByCityNameAgentByDirByBasePromptTemplateErrors[keyof PutV0CityByCityNameAgentByDirByBasePromptTemplateErrors];
+
+export type PutV0CityByCityNameAgentByDirByBasePromptTemplateResponses = {
+    /**
+     * OK
+     */
+    200: PromptTemplateResponse;
+};
+
+export type PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse = PutV0CityByCityNameAgentByDirByBasePromptTemplateResponses[keyof PutV0CityByCityNameAgentByDirByBasePromptTemplateResponses];
 
 export type PostV0CityByCityNameAgentByDirByBaseByActionData = {
     body?: never;

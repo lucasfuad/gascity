@@ -2,10 +2,15 @@ package api
 
 import (
 	"context"
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
 
 	"github.com/danielgtaylor/huma/v2"
 
 	"github.com/gastownhall/gascity/internal/config"
+	"github.com/gastownhall/gascity/internal/fsys"
 	"github.com/gastownhall/gascity/internal/maestro/agentconfig"
 )
 
@@ -205,6 +210,185 @@ func (s *Server) maestroAgentPatchFullByName(ctx context.Context, name, ifMatch 
 	}, nil
 }
 
+// MaestroAgentGetPromptTemplateInput is the Huma input for
+// GET /v0/city/{cityName}/agent/{base}/prompt-template.
+type MaestroAgentGetPromptTemplateInput struct {
+	CityScope
+	Name string `path:"base" doc:"Agent name (unqualified, no rig)."`
+}
+
+// MaestroAgentGetPromptTemplateQualifiedInput is the Huma input for
+// GET /v0/city/{cityName}/agent/{dir}/{base}/prompt-template.
+type MaestroAgentGetPromptTemplateQualifiedInput struct {
+	CityScope
+	Dir  string `path:"dir" doc:"Agent directory (rig name)."`
+	Base string `path:"base" doc:"Agent base name."`
+}
+
+// QualifiedName joins dir and base into a canonical agent name.
+func (i *MaestroAgentGetPromptTemplateQualifiedInput) QualifiedName() string {
+	return joinAgentQualifiedName(i.Dir, i.Base)
+}
+
+// MaestroAgentPromptTemplateOutput carries the GET/PUT response body
+// plus the content-hash ETag header. Shared between the two verbs so
+// optimistic-concurrency clients see the same wire shape from both —
+// the GET ETag is valid as If-Match on the next PUT, and the PUT
+// ETag is valid as If-Match on the PUT after that.
+type MaestroAgentPromptTemplateOutput struct {
+	ETag string `header:"ETag" doc:"Opaque content hash of the prompt template file. Use as If-Match on the next PUT."`
+	Body agentconfig.PromptTemplateResponse
+}
+
+// MaestroAgentPutPromptTemplateInput is the Huma input for
+// PUT /v0/city/{cityName}/agent/{base}/prompt-template.
+type MaestroAgentPutPromptTemplateInput struct {
+	CityScope
+	Name    string                            `path:"base" doc:"Agent name (unqualified, no rig)."`
+	IfMatch string                            `header:"If-Match" doc:"ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency."`
+	Body    agentconfig.PromptTemplatePutBody `contentType:"application/json"`
+}
+
+// MaestroAgentPutPromptTemplateQualifiedInput is the Huma input for
+// PUT /v0/city/{cityName}/agent/{dir}/{base}/prompt-template.
+type MaestroAgentPutPromptTemplateQualifiedInput struct {
+	CityScope
+	Dir     string                            `path:"dir" doc:"Agent directory (rig name)."`
+	Base    string                            `path:"base" doc:"Agent base name."`
+	IfMatch string                            `header:"If-Match" doc:"ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency."`
+	Body    agentconfig.PromptTemplatePutBody `contentType:"application/json"`
+}
+
+// QualifiedName joins dir and base into a canonical agent name.
+func (i *MaestroAgentPutPromptTemplateQualifiedInput) QualifiedName() string {
+	return joinAgentQualifiedName(i.Dir, i.Base)
+}
+
+// humaHandleMaestroAgentGetPromptTemplate is the Huma-typed handler
+// for the fork-only GET .../agent/{base}/prompt-template (unqualified
+// form). Reads the template content from disk and emits a
+// content-hash ETag for optimistic-concurrency clients.
+func (s *Server) humaHandleMaestroAgentGetPromptTemplate(_ context.Context, input *MaestroAgentGetPromptTemplateInput) (*MaestroAgentPromptTemplateOutput, error) {
+	return s.maestroAgentReadPromptTemplate(input.Name)
+}
+
+// humaHandleMaestroAgentGetPromptTemplateQualified is the qualified
+// (rig-scoped) variant of GET prompt-template.
+func (s *Server) humaHandleMaestroAgentGetPromptTemplateQualified(_ context.Context, input *MaestroAgentGetPromptTemplateQualifiedInput) (*MaestroAgentPromptTemplateOutput, error) {
+	return s.maestroAgentReadPromptTemplate(input.QualifiedName())
+}
+
+// humaHandleMaestroAgentPutPromptTemplate is the Huma-typed handler
+// for the fork-only PUT .../agent/{base}/prompt-template. Validates
+// optimistic concurrency via If-Match (when present), creates
+// intermediate directories, and writes atomically (temp + rename) so
+// readers never see a half-written file.
+func (s *Server) humaHandleMaestroAgentPutPromptTemplate(_ context.Context, input *MaestroAgentPutPromptTemplateInput) (*MaestroAgentPromptTemplateOutput, error) {
+	return s.maestroAgentWritePromptTemplate(input.Name, input.IfMatch, input.Body.Content)
+}
+
+// humaHandleMaestroAgentPutPromptTemplateQualified is the qualified
+// (rig-scoped) variant of PUT prompt-template.
+func (s *Server) humaHandleMaestroAgentPutPromptTemplateQualified(_ context.Context, input *MaestroAgentPutPromptTemplateQualifiedInput) (*MaestroAgentPromptTemplateOutput, error) {
+	return s.maestroAgentWritePromptTemplate(input.QualifiedName(), input.IfMatch, input.Body.Content)
+}
+
+// maestroAgentReadPromptTemplate composes the file-on-disk view for
+// GET .../prompt-template. The four error paths are intentionally
+// distinguishable via problem+json detail so the studio can render
+// targeted UX (configure a path, point at a different file, surface
+// a pack-derived banner, etc.) rather than a generic 404.
+func (s *Server) maestroAgentReadPromptTemplate(name string) (*MaestroAgentPromptTemplateOutput, error) {
+	resolution, err := s.resolveAgentPromptTemplate(name)
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := os.ReadFile(resolution.Resolved)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, huma.Error404NotFound("prompt_template file not found at " + resolution.Configured)
+		}
+		return nil, huma.Error500InternalServerError("read prompt_template: " + err.Error())
+	}
+	info, err := os.Stat(resolution.Resolved)
+	if err != nil {
+		return nil, huma.Error500InternalServerError("stat prompt_template: " + err.Error())
+	}
+	return &MaestroAgentPromptTemplateOutput{
+		ETag: agentconfig.ComputePromptTemplateETag(content),
+		Body: agentconfig.BuildPromptTemplateResponse(resolution.Configured, content, info.ModTime()),
+	}, nil
+}
+
+// maestroAgentWritePromptTemplate is the shared body for PUT handlers.
+// Order of operations matters: locate agent → validate If-Match against
+// current on-disk content → mkdir parents → atomic write → re-stat for
+// the response mtime. If-Match check happens before any disk mutation
+// so a stale request never even touches the filesystem.
+func (s *Server) maestroAgentWritePromptTemplate(name, ifMatch, content string) (*MaestroAgentPromptTemplateOutput, error) {
+	resolution, err := s.resolveAgentPromptTemplate(name)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read current content for If-Match comparison. A missing file is
+	// treated as "current content is empty bytes" so the operator can
+	// PUT to create with If-Match: "<hash of empty>" if they want
+	// strict create semantics, or just send an empty If-Match to skip
+	// optimistic concurrency entirely.
+	currentContent, err := os.ReadFile(resolution.Resolved)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, huma.Error500InternalServerError("read prompt_template: " + err.Error())
+	}
+	if ifMatch != "" {
+		if ifMatch != agentconfig.ComputePromptTemplateETag(currentContent) {
+			return nil, huma.Error409Conflict("prompt_template changed; refresh and retry")
+		}
+	}
+
+	if err := os.MkdirAll(filepath.Dir(resolution.Resolved), 0o755); err != nil {
+		return nil, huma.Error500InternalServerError("create prompt_template directory: " + err.Error())
+	}
+	newContent := []byte(content)
+	if err := fsys.WriteFileAtomic(fsys.OSFS{}, resolution.Resolved, newContent, 0o644); err != nil {
+		return nil, huma.Error500InternalServerError("write prompt_template: " + err.Error())
+	}
+
+	info, err := os.Stat(resolution.Resolved)
+	if err != nil {
+		return nil, huma.Error500InternalServerError("stat prompt_template: " + err.Error())
+	}
+	return &MaestroAgentPromptTemplateOutput{
+		ETag: agentconfig.ComputePromptTemplateETag(newContent),
+		Body: agentconfig.BuildPromptTemplateResponse(resolution.Configured, newContent, info.ModTime()),
+	}, nil
+}
+
+// resolveAgentPromptTemplate is the shared GET/PUT preamble: locate
+// the agent, resolve its prompt_template path against the city root,
+// and surface the three pre-IO error branches (agent not found, no
+// prompt_template configured, path escapes city root) as the right
+// HTTP status. Filesystem-level errors (file missing, read failure)
+// are caller-specific and handled in the GET/PUT bodies.
+func (s *Server) resolveAgentPromptTemplate(name string) (agentconfig.PromptTemplatePathResolution, error) {
+	if name == "" {
+		return agentconfig.PromptTemplatePathResolution{}, huma.Error400BadRequest("agent name required")
+	}
+	agentCfg, ok := findAgent(s.state.Config(), name)
+	if !ok {
+		return agentconfig.PromptTemplatePathResolution{}, huma.Error404NotFound("agent " + name + " not found")
+	}
+	resolution, hasTemplate := agentconfig.ResolvePromptTemplatePath(s.state.CityPath(), agentCfg.PromptTemplate)
+	if !hasTemplate {
+		return agentconfig.PromptTemplatePathResolution{}, huma.Error404NotFound("agent " + name + " has no prompt_template configured")
+	}
+	if resolution.EscapesCityRoot {
+		return agentconfig.PromptTemplatePathResolution{}, huma.Error403Forbidden("prompt_template lives outside city directory; pack-derived templates are read-only")
+	}
+	return resolution, nil
+}
+
 // registerMaestroRoutes registers fork-only Huma operations on the
 // supervisor's single Huma API. Called from NewSupervisorMux after
 // the upstream registerCityRoutes; the single line in supervisor.go
@@ -220,4 +404,8 @@ func (sm *SupervisorMux) registerMaestroRoutes() {
 	cityGet(sm, "/agent/{dir}/{base}/full", (*Server).humaHandleMaestroAgentGetFullQualified)
 	cityPatch(sm, "/agent/{base}/full", (*Server).humaHandleMaestroAgentPatchFull)
 	cityPatch(sm, "/agent/{dir}/{base}/full", (*Server).humaHandleMaestroAgentPatchFullQualified)
+	cityGet(sm, "/agent/{base}/prompt-template", (*Server).humaHandleMaestroAgentGetPromptTemplate)
+	cityGet(sm, "/agent/{dir}/{base}/prompt-template", (*Server).humaHandleMaestroAgentGetPromptTemplateQualified)
+	cityPut(sm, "/agent/{base}/prompt-template", (*Server).humaHandleMaestroAgentPutPromptTemplate)
+	cityPut(sm, "/agent/{dir}/{base}/prompt-template", (*Server).humaHandleMaestroAgentPutPromptTemplateQualified)
 }

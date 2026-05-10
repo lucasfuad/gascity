@@ -4750,6 +4750,43 @@
         ],
         "type": "object"
       },
+      "PromptTemplatePutBody": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "description": "UTF-8 contents to write to the template file.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      },
+      "PromptTemplateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "description": "UTF-8 contents of the template file.",
+            "type": "string"
+          },
+          "mtime": {
+            "description": "Last modification time on disk (RFC 3339).",
+            "format": "date-time",
+            "type": "string"
+          },
+          "path": {
+            "description": "Configured prompt_template path (relative to city dir or absolute, as stored in city.toml).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "content",
+          "mtime"
+        ],
+        "type": "object"
+      },
       "ProviderCreateInputBody": {
         "additionalProperties": false,
         "properties": {
@@ -12755,6 +12792,170 @@
         "summary": "Stream agent output in real time"
       }
     },
+    "/v0/city/{cityName}/agent/{base}/prompt-template": {
+      "get": {
+        "operationId": "get-v0-city-by-city-name-agent-by-base-prompt-template",
+        "parameters": [
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent name (unqualified, no rig).",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent name (unqualified, no rig).",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptTemplateResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the prompt template file. Use as If-Match on the next PUT.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Get v0 city by city name agent by base prompt template"
+      },
+      "put": {
+        "operationId": "put-v0-city-by-city-name-agent-by-base-prompt-template",
+        "parameters": [
+          {
+            "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+            "in": "header",
+            "name": "X-GC-Request",
+            "required": true,
+            "schema": {
+              "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent name (unqualified, no rig).",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent name (unqualified, no rig).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency.",
+            "in": "header",
+            "name": "If-Match",
+            "schema": {
+              "description": "ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency.",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptTemplatePutBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptTemplateResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the prompt template file. Use as If-Match on the next PUT.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Put v0 city by city name agent by base prompt template"
+      }
+    },
     "/v0/city/{cityName}/agent/{base}/{action}": {
       "post": {
         "operationId": "post-v0-city-by-city-name-agent-by-base-by-action",
@@ -13522,6 +13723,190 @@
           }
         },
         "summary": "Stream agent output in real time (qualified name)"
+      }
+    },
+    "/v0/city/{cityName}/agent/{dir}/{base}/prompt-template": {
+      "get": {
+        "operationId": "get-v0-city-by-city-name-agent-by-dir-by-base-prompt-template",
+        "parameters": [
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent directory (rig name).",
+            "in": "path",
+            "name": "dir",
+            "required": true,
+            "schema": {
+              "description": "Agent directory (rig name).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent base name.",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent base name.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptTemplateResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the prompt template file. Use as If-Match on the next PUT.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Get v0 city by city name agent by dir by base prompt template"
+      },
+      "put": {
+        "operationId": "put-v0-city-by-city-name-agent-by-dir-by-base-prompt-template",
+        "parameters": [
+          {
+            "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+            "in": "header",
+            "name": "X-GC-Request",
+            "required": true,
+            "schema": {
+              "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent directory (rig name).",
+            "in": "path",
+            "name": "dir",
+            "required": true,
+            "schema": {
+              "description": "Agent directory (rig name).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent base name.",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent base name.",
+              "type": "string"
+            }
+          },
+          {
+            "description": "ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency.",
+            "in": "header",
+            "name": "If-Match",
+            "schema": {
+              "description": "ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency.",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptTemplatePutBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptTemplateResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the prompt template file. Use as If-Match on the next PUT.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Put v0 city by city name agent by dir by base prompt template"
       }
     },
     "/v0/city/{cityName}/agent/{dir}/{base}/{action}": {

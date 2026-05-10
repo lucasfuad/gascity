@@ -1915,6 +1915,24 @@ type PoolOverride struct {
 	OnDeath      *string `json:"OnDeath"`
 }
 
+// PromptTemplatePutBody defines model for PromptTemplatePutBody.
+type PromptTemplatePutBody struct {
+	// Content UTF-8 contents to write to the template file.
+	Content string `json:"content"`
+}
+
+// PromptTemplateResponse defines model for PromptTemplateResponse.
+type PromptTemplateResponse struct {
+	// Content UTF-8 contents of the template file.
+	Content string `json:"content"`
+
+	// Mtime Last modification time on disk (RFC 3339).
+	Mtime time.Time `json:"mtime"`
+
+	// Path Configured prompt_template path (relative to city dir or absolute, as stored in city.toml).
+	Path string `json:"path"`
+}
+
 // ProviderCreateInputBody defines model for ProviderCreateInputBody.
 type ProviderCreateInputBody struct {
 	// AcpArgs ACP transport command arguments override.
@@ -4098,6 +4116,15 @@ type GetV0CityByCityNameAgentByBaseOutputParams struct {
 	Before *string `form:"before,omitempty" json:"before,omitempty"`
 }
 
+// PutV0CityByCityNameAgentByBasePromptTemplateParams defines parameters for PutV0CityByCityNameAgentByBasePromptTemplate.
+type PutV0CityByCityNameAgentByBasePromptTemplateParams struct {
+	// XGCRequest Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+	XGCRequest string `json:"X-GC-Request"`
+
+	// IfMatch ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency.
+	IfMatch *string `json:"If-Match,omitempty"`
+}
+
 // PostV0CityByCityNameAgentByBaseByActionParams defines parameters for PostV0CityByCityNameAgentByBaseByAction.
 type PostV0CityByCityNameAgentByBaseByActionParams struct {
 	// XGCRequest Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
@@ -4135,6 +4162,15 @@ type GetV0CityByCityNameAgentByDirByBaseOutputParams struct {
 
 	// Before Message UUID cursor for loading older messages.
 	Before *string `form:"before,omitempty" json:"before,omitempty"`
+}
+
+// PutV0CityByCityNameAgentByDirByBasePromptTemplateParams defines parameters for PutV0CityByCityNameAgentByDirByBasePromptTemplate.
+type PutV0CityByCityNameAgentByDirByBasePromptTemplateParams struct {
+	// XGCRequest Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+	XGCRequest string `json:"X-GC-Request"`
+
+	// IfMatch ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency.
+	IfMatch *string `json:"If-Match,omitempty"`
 }
 
 // PostV0CityByCityNameAgentByDirByBaseByActionParams defines parameters for PostV0CityByCityNameAgentByDirByBaseByAction.
@@ -4998,11 +5034,17 @@ type PatchV0CityByCityNameAgentByBaseJSONRequestBody = AgentUpdateInputBody
 // PatchV0CityByCityNameAgentByBaseFullJSONRequestBody defines body for PatchV0CityByCityNameAgentByBaseFull for application/json ContentType.
 type PatchV0CityByCityNameAgentByBaseFullJSONRequestBody = AgentPatchRequest
 
+// PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody defines body for PutV0CityByCityNameAgentByBasePromptTemplate for application/json ContentType.
+type PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody = PromptTemplatePutBody
+
 // PatchV0CityByCityNameAgentByDirByBaseJSONRequestBody defines body for PatchV0CityByCityNameAgentByDirByBase for application/json ContentType.
 type PatchV0CityByCityNameAgentByDirByBaseJSONRequestBody = AgentUpdateQualifiedInputBody
 
 // PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody defines body for PatchV0CityByCityNameAgentByDirByBaseFull for application/json ContentType.
 type PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody = AgentPatchRequest
+
+// PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody defines body for PutV0CityByCityNameAgentByDirByBasePromptTemplate for application/json ContentType.
+type PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody = PromptTemplatePutBody
 
 // CreateAgentJSONRequestBody defines body for CreateAgent for application/json ContentType.
 type CreateAgentJSONRequestBody = AgentCreateInputBody
@@ -8587,6 +8629,14 @@ type ClientInterface interface {
 	// StreamAgentOutput request
 	StreamAgentOutput(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetV0CityByCityNameAgentByBasePromptTemplate request
+	GetV0CityByCityNameAgentByBasePromptTemplate(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutV0CityByCityNameAgentByBasePromptTemplateWithBody request with any body
+	PutV0CityByCityNameAgentByBasePromptTemplateWithBody(ctx context.Context, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutV0CityByCityNameAgentByBasePromptTemplate(ctx context.Context, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, body PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostV0CityByCityNameAgentByBaseByAction request
 	PostV0CityByCityNameAgentByBaseByAction(ctx context.Context, cityName string, base string, action PostV0CityByCityNameAgentByBaseByActionParamsAction, params *PostV0CityByCityNameAgentByBaseByActionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8614,6 +8664,14 @@ type ClientInterface interface {
 
 	// StreamAgentOutputQualified request
 	StreamAgentOutputQualified(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetV0CityByCityNameAgentByDirByBasePromptTemplate request
+	GetV0CityByCityNameAgentByDirByBasePromptTemplate(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutV0CityByCityNameAgentByDirByBasePromptTemplateWithBody request with any body
+	PutV0CityByCityNameAgentByDirByBasePromptTemplateWithBody(ctx context.Context, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutV0CityByCityNameAgentByDirByBasePromptTemplate(ctx context.Context, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, body PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PostV0CityByCityNameAgentByDirByBaseByAction request
 	PostV0CityByCityNameAgentByDirByBaseByAction(ctx context.Context, cityName string, dir string, base string, action PostV0CityByCityNameAgentByDirByBaseByActionParamsAction, params *PostV0CityByCityNameAgentByDirByBaseByActionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -9261,6 +9319,42 @@ func (c *Client) StreamAgentOutput(ctx context.Context, cityName string, base st
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetV0CityByCityNameAgentByBasePromptTemplate(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV0CityByCityNameAgentByBasePromptTemplateRequest(c.Server, cityName, base)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutV0CityByCityNameAgentByBasePromptTemplateWithBody(ctx context.Context, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutV0CityByCityNameAgentByBasePromptTemplateRequestWithBody(c.Server, cityName, base, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutV0CityByCityNameAgentByBasePromptTemplate(ctx context.Context, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, body PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutV0CityByCityNameAgentByBasePromptTemplateRequest(c.Server, cityName, base, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) PostV0CityByCityNameAgentByBaseByAction(ctx context.Context, cityName string, base string, action PostV0CityByCityNameAgentByBaseByActionParamsAction, params *PostV0CityByCityNameAgentByBaseByActionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostV0CityByCityNameAgentByBaseByActionRequest(c.Server, cityName, base, action, params)
 	if err != nil {
@@ -9371,6 +9465,42 @@ func (c *Client) GetV0CityByCityNameAgentByDirByBaseOutput(ctx context.Context, 
 
 func (c *Client) StreamAgentOutputQualified(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewStreamAgentOutputQualifiedRequest(c.Server, cityName, dir, base)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetV0CityByCityNameAgentByDirByBasePromptTemplate(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV0CityByCityNameAgentByDirByBasePromptTemplateRequest(c.Server, cityName, dir, base)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutV0CityByCityNameAgentByDirByBasePromptTemplateWithBody(ctx context.Context, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutV0CityByCityNameAgentByDirByBasePromptTemplateRequestWithBody(c.Server, cityName, dir, base, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutV0CityByCityNameAgentByDirByBasePromptTemplate(ctx context.Context, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, body PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutV0CityByCityNameAgentByDirByBasePromptTemplateRequest(c.Server, cityName, dir, base, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -11939,6 +12069,125 @@ func NewStreamAgentOutputRequest(server string, cityName string, base string) (*
 	return req, nil
 }
 
+// NewGetV0CityByCityNameAgentByBasePromptTemplateRequest generates requests for GetV0CityByCityNameAgentByBasePromptTemplate
+func NewGetV0CityByCityNameAgentByBasePromptTemplateRequest(server string, cityName string, base string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/prompt-template", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutV0CityByCityNameAgentByBasePromptTemplateRequest calls the generic PutV0CityByCityNameAgentByBasePromptTemplate builder with application/json body
+func NewPutV0CityByCityNameAgentByBasePromptTemplateRequest(server string, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, body PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutV0CityByCityNameAgentByBasePromptTemplateRequestWithBody(server, cityName, base, params, "application/json", bodyReader)
+}
+
+// NewPutV0CityByCityNameAgentByBasePromptTemplateRequestWithBody generates requests for PutV0CityByCityNameAgentByBasePromptTemplate with any type of body
+func NewPutV0CityByCityNameAgentByBasePromptTemplateRequestWithBody(server string, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/prompt-template", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-GC-Request", params.XGCRequest, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-GC-Request", headerParam0)
+
+		if params.IfMatch != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithOptions("simple", false, "If-Match", *params.IfMatch, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("If-Match", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewPostV0CityByCityNameAgentByBaseByActionRequest generates requests for PostV0CityByCityNameAgentByBaseByAction
 func NewPostV0CityByCityNameAgentByBaseByActionRequest(server string, cityName string, base string, action PostV0CityByCityNameAgentByBaseByActionParamsAction, params *PostV0CityByCityNameAgentByBaseByActionParams) (*http.Request, error) {
 	var err error
@@ -12445,6 +12694,139 @@ func NewStreamAgentOutputQualifiedRequest(server string, cityName string, dir st
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetV0CityByCityNameAgentByDirByBasePromptTemplateRequest generates requests for GetV0CityByCityNameAgentByDirByBasePromptTemplate
+func NewGetV0CityByCityNameAgentByDirByBasePromptTemplateRequest(server string, cityName string, dir string, base string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "dir", dir, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/%s/prompt-template", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutV0CityByCityNameAgentByDirByBasePromptTemplateRequest calls the generic PutV0CityByCityNameAgentByDirByBasePromptTemplate builder with application/json body
+func NewPutV0CityByCityNameAgentByDirByBasePromptTemplateRequest(server string, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, body PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutV0CityByCityNameAgentByDirByBasePromptTemplateRequestWithBody(server, cityName, dir, base, params, "application/json", bodyReader)
+}
+
+// NewPutV0CityByCityNameAgentByDirByBasePromptTemplateRequestWithBody generates requests for PutV0CityByCityNameAgentByDirByBasePromptTemplate with any type of body
+func NewPutV0CityByCityNameAgentByDirByBasePromptTemplateRequestWithBody(server string, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "dir", dir, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/%s/prompt-template", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-GC-Request", params.XGCRequest, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-GC-Request", headerParam0)
+
+		if params.IfMatch != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithOptions("simple", false, "If-Match", *params.IfMatch, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("If-Match", headerParam1)
+		}
+
 	}
 
 	return req, nil
@@ -20756,6 +21138,14 @@ type ClientWithResponsesInterface interface {
 	// StreamAgentOutputWithResponse request
 	StreamAgentOutputWithResponse(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*StreamAgentOutputResponse, error)
 
+	// GetV0CityByCityNameAgentByBasePromptTemplateWithResponse request
+	GetV0CityByCityNameAgentByBasePromptTemplateWithResponse(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBasePromptTemplateResponse, error)
+
+	// PutV0CityByCityNameAgentByBasePromptTemplateWithBodyWithResponse request with any body
+	PutV0CityByCityNameAgentByBasePromptTemplateWithBodyWithResponse(ctx context.Context, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutV0CityByCityNameAgentByBasePromptTemplateResponse, error)
+
+	PutV0CityByCityNameAgentByBasePromptTemplateWithResponse(ctx context.Context, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, body PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*PutV0CityByCityNameAgentByBasePromptTemplateResponse, error)
+
 	// PostV0CityByCityNameAgentByBaseByActionWithResponse request
 	PostV0CityByCityNameAgentByBaseByActionWithResponse(ctx context.Context, cityName string, base string, action PostV0CityByCityNameAgentByBaseByActionParamsAction, params *PostV0CityByCityNameAgentByBaseByActionParams, reqEditors ...RequestEditorFn) (*PostV0CityByCityNameAgentByBaseByActionResponse, error)
 
@@ -20783,6 +21173,14 @@ type ClientWithResponsesInterface interface {
 
 	// StreamAgentOutputQualifiedWithResponse request
 	StreamAgentOutputQualifiedWithResponse(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*StreamAgentOutputQualifiedResponse, error)
+
+	// GetV0CityByCityNameAgentByDirByBasePromptTemplateWithResponse request
+	GetV0CityByCityNameAgentByDirByBasePromptTemplateWithResponse(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse, error)
+
+	// PutV0CityByCityNameAgentByDirByBasePromptTemplateWithBodyWithResponse request with any body
+	PutV0CityByCityNameAgentByDirByBasePromptTemplateWithBodyWithResponse(ctx context.Context, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse, error)
+
+	PutV0CityByCityNameAgentByDirByBasePromptTemplateWithResponse(ctx context.Context, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, body PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse, error)
 
 	// PostV0CityByCityNameAgentByDirByBaseByActionWithResponse request
 	PostV0CityByCityNameAgentByDirByBaseByActionWithResponse(ctx context.Context, cityName string, dir string, base string, action PostV0CityByCityNameAgentByDirByBaseByActionParamsAction, params *PostV0CityByCityNameAgentByDirByBaseByActionParams, reqEditors ...RequestEditorFn) (*PostV0CityByCityNameAgentByDirByBaseByActionResponse, error)
@@ -21513,6 +21911,52 @@ func (r StreamAgentOutputResponse) StatusCode() int {
 	return 0
 }
 
+type GetV0CityByCityNameAgentByBasePromptTemplateResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *PromptTemplateResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV0CityByCityNameAgentByBasePromptTemplateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV0CityByCityNameAgentByBasePromptTemplateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutV0CityByCityNameAgentByBasePromptTemplateResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *PromptTemplateResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r PutV0CityByCityNameAgentByBasePromptTemplateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutV0CityByCityNameAgentByBasePromptTemplateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PostV0CityByCityNameAgentByBaseByActionResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -21690,6 +22134,52 @@ func (r StreamAgentOutputQualifiedResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r StreamAgentOutputQualifiedResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *PromptTemplateResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *PromptTemplateResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -24754,6 +25244,32 @@ func (c *ClientWithResponses) StreamAgentOutputWithResponse(ctx context.Context,
 	return ParseStreamAgentOutputResponse(rsp)
 }
 
+// GetV0CityByCityNameAgentByBasePromptTemplateWithResponse request returning *GetV0CityByCityNameAgentByBasePromptTemplateResponse
+func (c *ClientWithResponses) GetV0CityByCityNameAgentByBasePromptTemplateWithResponse(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBasePromptTemplateResponse, error) {
+	rsp, err := c.GetV0CityByCityNameAgentByBasePromptTemplate(ctx, cityName, base, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV0CityByCityNameAgentByBasePromptTemplateResponse(rsp)
+}
+
+// PutV0CityByCityNameAgentByBasePromptTemplateWithBodyWithResponse request with arbitrary body returning *PutV0CityByCityNameAgentByBasePromptTemplateResponse
+func (c *ClientWithResponses) PutV0CityByCityNameAgentByBasePromptTemplateWithBodyWithResponse(ctx context.Context, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutV0CityByCityNameAgentByBasePromptTemplateResponse, error) {
+	rsp, err := c.PutV0CityByCityNameAgentByBasePromptTemplateWithBody(ctx, cityName, base, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutV0CityByCityNameAgentByBasePromptTemplateResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutV0CityByCityNameAgentByBasePromptTemplateWithResponse(ctx context.Context, cityName string, base string, params *PutV0CityByCityNameAgentByBasePromptTemplateParams, body PutV0CityByCityNameAgentByBasePromptTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*PutV0CityByCityNameAgentByBasePromptTemplateResponse, error) {
+	rsp, err := c.PutV0CityByCityNameAgentByBasePromptTemplate(ctx, cityName, base, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutV0CityByCityNameAgentByBasePromptTemplateResponse(rsp)
+}
+
 // PostV0CityByCityNameAgentByBaseByActionWithResponse request returning *PostV0CityByCityNameAgentByBaseByActionResponse
 func (c *ClientWithResponses) PostV0CityByCityNameAgentByBaseByActionWithResponse(ctx context.Context, cityName string, base string, action PostV0CityByCityNameAgentByBaseByActionParamsAction, params *PostV0CityByCityNameAgentByBaseByActionParams, reqEditors ...RequestEditorFn) (*PostV0CityByCityNameAgentByBaseByActionResponse, error) {
 	rsp, err := c.PostV0CityByCityNameAgentByBaseByAction(ctx, cityName, base, action, params, reqEditors...)
@@ -24840,6 +25356,32 @@ func (c *ClientWithResponses) StreamAgentOutputQualifiedWithResponse(ctx context
 		return nil, err
 	}
 	return ParseStreamAgentOutputQualifiedResponse(rsp)
+}
+
+// GetV0CityByCityNameAgentByDirByBasePromptTemplateWithResponse request returning *GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse
+func (c *ClientWithResponses) GetV0CityByCityNameAgentByDirByBasePromptTemplateWithResponse(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse, error) {
+	rsp, err := c.GetV0CityByCityNameAgentByDirByBasePromptTemplate(ctx, cityName, dir, base, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV0CityByCityNameAgentByDirByBasePromptTemplateResponse(rsp)
+}
+
+// PutV0CityByCityNameAgentByDirByBasePromptTemplateWithBodyWithResponse request with arbitrary body returning *PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse
+func (c *ClientWithResponses) PutV0CityByCityNameAgentByDirByBasePromptTemplateWithBodyWithResponse(ctx context.Context, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse, error) {
+	rsp, err := c.PutV0CityByCityNameAgentByDirByBasePromptTemplateWithBody(ctx, cityName, dir, base, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutV0CityByCityNameAgentByDirByBasePromptTemplateResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutV0CityByCityNameAgentByDirByBasePromptTemplateWithResponse(ctx context.Context, cityName string, dir string, base string, params *PutV0CityByCityNameAgentByDirByBasePromptTemplateParams, body PutV0CityByCityNameAgentByDirByBasePromptTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse, error) {
+	rsp, err := c.PutV0CityByCityNameAgentByDirByBasePromptTemplate(ctx, cityName, dir, base, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutV0CityByCityNameAgentByDirByBasePromptTemplateResponse(rsp)
 }
 
 // PostV0CityByCityNameAgentByDirByBaseByActionWithResponse request returning *PostV0CityByCityNameAgentByDirByBaseByActionResponse
@@ -26662,6 +27204,72 @@ func ParseStreamAgentOutputResponse(rsp *http.Response) (*StreamAgentOutputRespo
 	return response, nil
 }
 
+// ParseGetV0CityByCityNameAgentByBasePromptTemplateResponse parses an HTTP response from a GetV0CityByCityNameAgentByBasePromptTemplateWithResponse call
+func ParseGetV0CityByCityNameAgentByBasePromptTemplateResponse(rsp *http.Response) (*GetV0CityByCityNameAgentByBasePromptTemplateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV0CityByCityNameAgentByBasePromptTemplateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PromptTemplateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutV0CityByCityNameAgentByBasePromptTemplateResponse parses an HTTP response from a PutV0CityByCityNameAgentByBasePromptTemplateWithResponse call
+func ParsePutV0CityByCityNameAgentByBasePromptTemplateResponse(rsp *http.Response) (*PutV0CityByCityNameAgentByBasePromptTemplateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutV0CityByCityNameAgentByBasePromptTemplateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PromptTemplateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParsePostV0CityByCityNameAgentByBaseByActionResponse parses an HTTP response from a PostV0CityByCityNameAgentByBaseByActionWithResponse call
 func ParsePostV0CityByCityNameAgentByBaseByActionResponse(rsp *http.Response) (*PostV0CityByCityNameAgentByBaseByActionResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -26907,6 +27515,72 @@ func ParseStreamAgentOutputQualifiedResponse(rsp *http.Response) (*StreamAgentOu
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetV0CityByCityNameAgentByDirByBasePromptTemplateResponse parses an HTTP response from a GetV0CityByCityNameAgentByDirByBasePromptTemplateWithResponse call
+func ParseGetV0CityByCityNameAgentByDirByBasePromptTemplateResponse(rsp *http.Response) (*GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV0CityByCityNameAgentByDirByBasePromptTemplateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PromptTemplateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutV0CityByCityNameAgentByDirByBasePromptTemplateResponse parses an HTTP response from a PutV0CityByCityNameAgentByDirByBasePromptTemplateWithResponse call
+func ParsePutV0CityByCityNameAgentByDirByBasePromptTemplateResponse(rsp *http.Response) (*PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutV0CityByCityNameAgentByDirByBasePromptTemplateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PromptTemplateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorModel
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {

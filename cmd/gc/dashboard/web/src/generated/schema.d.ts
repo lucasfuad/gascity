@@ -147,6 +147,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v0/city/{cityName}/agent/{base}/prompt-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get v0 city by city name agent by base prompt template */
+        get: operations["get-v0-city-by-city-name-agent-by-base-prompt-template"];
+        /** Put v0 city by city name agent by base prompt template */
+        put: operations["put-v0-city-by-city-name-agent-by-base-prompt-template"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v0/city/{cityName}/agent/{base}/{action}": {
         parameters: {
             query?: never;
@@ -231,6 +249,24 @@ export interface paths {
          */
         get: operations["stream-agent-output-qualified"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v0/city/{cityName}/agent/{dir}/{base}/prompt-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get v0 city by city name agent by dir by base prompt template */
+        get: operations["get-v0-city-by-city-name-agent-by-dir-by-base-prompt-template"];
+        /** Put v0 city by city name agent by dir by base prompt template */
+        put: operations["put-v0-city-by-city-name-agent-by-dir-by-base-prompt-template"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3386,6 +3422,21 @@ export interface components {
             OnBoot: string | null;
             OnDeath: string | null;
         };
+        PromptTemplatePutBody: {
+            /** @description UTF-8 contents to write to the template file. */
+            content: string;
+        };
+        PromptTemplateResponse: {
+            /** @description UTF-8 contents of the template file. */
+            content: string;
+            /**
+             * Format: date-time
+             * @description Last modification time on disk (RFC 3339).
+             */
+            mtime: string;
+            /** @description Configured prompt_template path (relative to city dir or absolute, as stored in city.toml). */
+            path: string;
+        };
         ProviderCreateInputBody: {
             /** @description ACP transport command arguments override. */
             acp_args?: string[] | null;
@@ -6412,6 +6463,89 @@ export interface operations {
             };
         };
     };
+    "get-v0-city-by-city-name-agent-by-base-prompt-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent name (unqualified, no rig). */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptTemplateResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "put-v0-city-by-city-name-agent-by-base-prompt-template": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks. */
+                "X-GC-Request": string;
+                /** @description ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency. */
+                "If-Match"?: string;
+            };
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent name (unqualified, no rig). */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptTemplatePutBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptTemplateResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "post-v0-city-by-city-name-agent-by-base-by-action": {
         parameters: {
             query?: never;
@@ -6758,6 +6892,93 @@ export interface operations {
                         /** @description The retry time in milliseconds. */
                         retry?: number;
                     })[];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-v0-city-by-city-name-agent-by-dir-by-base-prompt-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent directory (rig name). */
+                dir: string;
+                /** @description Agent base name. */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptTemplateResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "put-v0-city-by-city-name-agent-by-dir-by-base-prompt-template": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks. */
+                "X-GC-Request": string;
+                /** @description ETag returned by the most recent GET or PUT. When present and stale, the request is rejected with 409 Conflict. Empty skips optimistic concurrency. */
+                "If-Match"?: string;
+            };
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent directory (rig name). */
+                dir: string;
+                /** @description Agent base name. */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptTemplatePutBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptTemplateResponse"];
                 };
             };
             /** @description Error */
