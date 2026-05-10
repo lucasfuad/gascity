@@ -634,6 +634,87 @@
         ],
         "type": "object"
       },
+      "AgentPatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "drain_timeout": {
+            "description": "Go duration string.",
+            "type": "string"
+          },
+          "env": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "idle_timeout": {
+            "description": "Go duration string ('30s', '5m', '1h').",
+            "type": "string"
+          },
+          "inject_fragments": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "max_active_sessions": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "min_active_sessions": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "nudge": {
+            "type": "string"
+          },
+          "pre_start": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "provider": {
+            "type": "string"
+          },
+          "scale_check": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "city",
+              "rig"
+            ],
+            "type": "string"
+          },
+          "sleep_after_idle": {
+            "description": "Duration string or 'off'.",
+            "type": "string"
+          },
+          "suspended": {
+            "type": "boolean"
+          },
+          "wake_mode": {
+            "enum": [
+              "resume",
+              "fresh"
+            ],
+            "type": "string"
+          },
+          "work_dir": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "AgentPatchSetInputBody": {
         "additionalProperties": false,
         "properties": {
@@ -12325,6 +12406,12 @@
             },
             "description": "OK",
             "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the agent definition. Use as If-Match on the next PATCH.",
+                  "type": "string"
+                }
+              },
               "X-GC-Index": {
                 "schema": {
                   "description": "Latest event sequence number.",
@@ -12355,6 +12442,110 @@
           }
         },
         "summary": "Get v0 city by city name agent by base full"
+      },
+      "patch": {
+        "operationId": "patch-v0-city-by-city-name-agent-by-base-full",
+        "parameters": [
+          {
+            "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+            "in": "header",
+            "name": "X-GC-Request",
+            "required": true,
+            "schema": {
+              "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent name (unqualified, no rig).",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent name (unqualified, no rig).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.",
+            "in": "header",
+            "name": "If-Match",
+            "schema": {
+              "description": "ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentFullResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the agent definition. Use as If-Match on the next PATCH.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Index": {
+                "schema": {
+                  "description": "Latest event sequence number.",
+                  "format": "int64",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Patch v0 city by city name agent by base full"
       }
     },
     "/v0/city/{cityName}/agent/{base}/output": {
@@ -12954,6 +13145,12 @@
             },
             "description": "OK",
             "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the agent definition. Use as If-Match on the next PATCH.",
+                  "type": "string"
+                }
+              },
               "X-GC-Index": {
                 "schema": {
                   "description": "Latest event sequence number.",
@@ -12984,6 +13181,120 @@
           }
         },
         "summary": "Get v0 city by city name agent by dir by base full"
+      },
+      "patch": {
+        "operationId": "patch-v0-city-by-city-name-agent-by-dir-by-base-full",
+        "parameters": [
+          {
+            "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+            "in": "header",
+            "name": "X-GC-Request",
+            "required": true,
+            "schema": {
+              "description": "Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent directory (rig name).",
+            "in": "path",
+            "name": "dir",
+            "required": true,
+            "schema": {
+              "description": "Agent directory (rig name).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent base name.",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent base name.",
+              "type": "string"
+            }
+          },
+          {
+            "description": "ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.",
+            "in": "header",
+            "name": "If-Match",
+            "schema": {
+              "description": "ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentFullResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash of the agent definition. Use as If-Match on the next PATCH.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Index": {
+                "schema": {
+                  "description": "Latest event sequence number.",
+                  "format": "int64",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Patch v0 city by city name agent by dir by base full"
       }
     },
     "/v0/city/{cityName}/agent/{dir}/{base}/output": {

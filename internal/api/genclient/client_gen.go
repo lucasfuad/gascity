@@ -18,6 +18,42 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for AgentPatchRequestScope.
+const (
+	City AgentPatchRequestScope = "city"
+	Rig  AgentPatchRequestScope = "rig"
+)
+
+// Valid indicates whether the value is a known member of the AgentPatchRequestScope enum.
+func (e AgentPatchRequestScope) Valid() bool {
+	switch e {
+	case City:
+		return true
+	case Rig:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentPatchRequestWakeMode.
+const (
+	AgentPatchRequestWakeModeFresh  AgentPatchRequestWakeMode = "fresh"
+	AgentPatchRequestWakeModeResume AgentPatchRequestWakeMode = "resume"
+)
+
+// Valid indicates whether the value is a known member of the AgentPatchRequestWakeMode enum.
+func (e AgentPatchRequestWakeMode) Valid() bool {
+	switch e {
+	case AgentPatchRequestWakeModeFresh:
+		return true
+	case AgentPatchRequestWakeModeResume:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BindingStatus.
 const (
 	Active BindingStatus = "active"
@@ -185,16 +221,16 @@ func (e PostV0CityByCityNameAgentByBaseByActionParamsAction) Valid() bool {
 
 // Defines values for PostV0CityByCityNameAgentByDirByBaseByActionParamsAction.
 const (
-	PostV0CityByCityNameAgentByDirByBaseByActionParamsActionResume  PostV0CityByCityNameAgentByDirByBaseByActionParamsAction = "resume"
-	PostV0CityByCityNameAgentByDirByBaseByActionParamsActionSuspend PostV0CityByCityNameAgentByDirByBaseByActionParamsAction = "suspend"
+	Resume  PostV0CityByCityNameAgentByDirByBaseByActionParamsAction = "resume"
+	Suspend PostV0CityByCityNameAgentByDirByBaseByActionParamsAction = "suspend"
 )
 
 // Valid indicates whether the value is a known member of the PostV0CityByCityNameAgentByDirByBaseByActionParamsAction enum.
 func (e PostV0CityByCityNameAgentByDirByBaseByActionParamsAction) Valid() bool {
 	switch e {
-	case PostV0CityByCityNameAgentByDirByBaseByActionParamsActionResume:
+	case Resume:
 		return true
-	case PostV0CityByCityNameAgentByDirByBaseByActionParamsActionSuspend:
+	case Suspend:
 		return true
 	default:
 		return false
@@ -354,6 +390,36 @@ type AgentPatch struct {
 	WakeMode                *string           `json:"WakeMode"`
 	WorkDir                 *string           `json:"WorkDir"`
 }
+
+// AgentPatchRequest defines model for AgentPatchRequest.
+type AgentPatchRequest struct {
+	// DrainTimeout Go duration string.
+	DrainTimeout *string            `json:"drain_timeout,omitempty"`
+	Env          *map[string]string `json:"env,omitempty"`
+
+	// IdleTimeout Go duration string ('30s', '5m', '1h').
+	IdleTimeout       *string                 `json:"idle_timeout,omitempty"`
+	InjectFragments   *[]string               `json:"inject_fragments,omitempty"`
+	MaxActiveSessions *int64                  `json:"max_active_sessions,omitempty"`
+	MinActiveSessions *int64                  `json:"min_active_sessions,omitempty"`
+	Nudge             *string                 `json:"nudge,omitempty"`
+	PreStart          *[]string               `json:"pre_start,omitempty"`
+	Provider          *string                 `json:"provider,omitempty"`
+	ScaleCheck        *string                 `json:"scale_check,omitempty"`
+	Scope             *AgentPatchRequestScope `json:"scope,omitempty"`
+
+	// SleepAfterIdle Duration string or 'off'.
+	SleepAfterIdle *string                    `json:"sleep_after_idle,omitempty"`
+	Suspended      *bool                      `json:"suspended,omitempty"`
+	WakeMode       *AgentPatchRequestWakeMode `json:"wake_mode,omitempty"`
+	WorkDir        *string                    `json:"work_dir,omitempty"`
+}
+
+// AgentPatchRequestScope defines model for AgentPatchRequest.Scope.
+type AgentPatchRequestScope string
+
+// AgentPatchRequestWakeMode defines model for AgentPatchRequest.WakeMode.
+type AgentPatchRequestWakeMode string
 
 // AgentPatchSetInputBody defines model for AgentPatchSetInputBody.
 type AgentPatchSetInputBody struct {
@@ -4014,6 +4080,15 @@ type PatchV0CityByCityNameAgentByBaseParams struct {
 	XGCRequest string `json:"X-GC-Request"`
 }
 
+// PatchV0CityByCityNameAgentByBaseFullParams defines parameters for PatchV0CityByCityNameAgentByBaseFull.
+type PatchV0CityByCityNameAgentByBaseFullParams struct {
+	// XGCRequest Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+	XGCRequest string `json:"X-GC-Request"`
+
+	// IfMatch ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.
+	IfMatch *string `json:"If-Match,omitempty"`
+}
+
 // GetV0CityByCityNameAgentByBaseOutputParams defines parameters for GetV0CityByCityNameAgentByBaseOutput.
 type GetV0CityByCityNameAgentByBaseOutputParams struct {
 	// Tail Number of recent compaction segments to return. This API parameter keeps compaction-segment semantics even though gc session logs --tail counts displayed transcript entries. Omit for the endpoint default (usually 1); 0 returns all segments; N>0 returns the last N.
@@ -4042,6 +4117,15 @@ type DeleteV0CityByCityNameAgentByDirByBaseParams struct {
 type PatchV0CityByCityNameAgentByDirByBaseParams struct {
 	// XGCRequest Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
 	XGCRequest string `json:"X-GC-Request"`
+}
+
+// PatchV0CityByCityNameAgentByDirByBaseFullParams defines parameters for PatchV0CityByCityNameAgentByDirByBaseFull.
+type PatchV0CityByCityNameAgentByDirByBaseFullParams struct {
+	// XGCRequest Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+	XGCRequest string `json:"X-GC-Request"`
+
+	// IfMatch ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.
+	IfMatch *string `json:"If-Match,omitempty"`
 }
 
 // GetV0CityByCityNameAgentByDirByBaseOutputParams defines parameters for GetV0CityByCityNameAgentByDirByBaseOutput.
@@ -4911,8 +4995,14 @@ type PatchV0CityByCityNameJSONRequestBody = CityPatchInputBody
 // PatchV0CityByCityNameAgentByBaseJSONRequestBody defines body for PatchV0CityByCityNameAgentByBase for application/json ContentType.
 type PatchV0CityByCityNameAgentByBaseJSONRequestBody = AgentUpdateInputBody
 
+// PatchV0CityByCityNameAgentByBaseFullJSONRequestBody defines body for PatchV0CityByCityNameAgentByBaseFull for application/json ContentType.
+type PatchV0CityByCityNameAgentByBaseFullJSONRequestBody = AgentPatchRequest
+
 // PatchV0CityByCityNameAgentByDirByBaseJSONRequestBody defines body for PatchV0CityByCityNameAgentByDirByBase for application/json ContentType.
 type PatchV0CityByCityNameAgentByDirByBaseJSONRequestBody = AgentUpdateQualifiedInputBody
+
+// PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody defines body for PatchV0CityByCityNameAgentByDirByBaseFull for application/json ContentType.
+type PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody = AgentPatchRequest
 
 // CreateAgentJSONRequestBody defines body for CreateAgent for application/json ContentType.
 type CreateAgentJSONRequestBody = AgentCreateInputBody
@@ -8486,6 +8576,11 @@ type ClientInterface interface {
 	// GetV0CityByCityNameAgentByBaseFull request
 	GetV0CityByCityNameAgentByBaseFull(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PatchV0CityByCityNameAgentByBaseFullWithBody request with any body
+	PatchV0CityByCityNameAgentByBaseFullWithBody(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchV0CityByCityNameAgentByBaseFull(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, body PatchV0CityByCityNameAgentByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetV0CityByCityNameAgentByBaseOutput request
 	GetV0CityByCityNameAgentByBaseOutput(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -8508,6 +8603,11 @@ type ClientInterface interface {
 
 	// GetV0CityByCityNameAgentByDirByBaseFull request
 	GetV0CityByCityNameAgentByDirByBaseFull(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PatchV0CityByCityNameAgentByDirByBaseFullWithBody request with any body
+	PatchV0CityByCityNameAgentByDirByBaseFullWithBody(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchV0CityByCityNameAgentByDirByBaseFull(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, body PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetV0CityByCityNameAgentByDirByBaseOutput request
 	GetV0CityByCityNameAgentByDirByBaseOutput(ctx context.Context, cityName string, dir string, base string, params *GetV0CityByCityNameAgentByDirByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -9113,6 +9213,30 @@ func (c *Client) GetV0CityByCityNameAgentByBaseFull(ctx context.Context, cityNam
 	return c.Client.Do(req)
 }
 
+func (c *Client) PatchV0CityByCityNameAgentByBaseFullWithBody(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchV0CityByCityNameAgentByBaseFullRequestWithBody(c.Server, cityName, base, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchV0CityByCityNameAgentByBaseFull(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, body PatchV0CityByCityNameAgentByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchV0CityByCityNameAgentByBaseFullRequest(c.Server, cityName, base, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetV0CityByCityNameAgentByBaseOutput(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetV0CityByCityNameAgentByBaseOutputRequest(c.Server, cityName, base, params)
 	if err != nil {
@@ -9199,6 +9323,30 @@ func (c *Client) PatchV0CityByCityNameAgentByDirByBase(ctx context.Context, city
 
 func (c *Client) GetV0CityByCityNameAgentByDirByBaseFull(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetV0CityByCityNameAgentByDirByBaseFullRequest(c.Server, cityName, dir, base)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchV0CityByCityNameAgentByDirByBaseFullWithBody(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchV0CityByCityNameAgentByDirByBaseFullRequestWithBody(c.Server, cityName, dir, base, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchV0CityByCityNameAgentByDirByBaseFull(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, body PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchV0CityByCityNameAgentByDirByBaseFullRequest(c.Server, cityName, dir, base, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -11593,6 +11741,84 @@ func NewGetV0CityByCityNameAgentByBaseFullRequest(server string, cityName string
 	return req, nil
 }
 
+// NewPatchV0CityByCityNameAgentByBaseFullRequest calls the generic PatchV0CityByCityNameAgentByBaseFull builder with application/json body
+func NewPatchV0CityByCityNameAgentByBaseFullRequest(server string, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, body PatchV0CityByCityNameAgentByBaseFullJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchV0CityByCityNameAgentByBaseFullRequestWithBody(server, cityName, base, params, "application/json", bodyReader)
+}
+
+// NewPatchV0CityByCityNameAgentByBaseFullRequestWithBody generates requests for PatchV0CityByCityNameAgentByBaseFull with any type of body
+func NewPatchV0CityByCityNameAgentByBaseFullRequestWithBody(server string, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/full", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-GC-Request", params.XGCRequest, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-GC-Request", headerParam0)
+
+		if params.IfMatch != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithOptions("simple", false, "If-Match", *params.IfMatch, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("If-Match", headerParam1)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewGetV0CityByCityNameAgentByBaseOutputRequest generates requests for GetV0CityByCityNameAgentByBaseOutput
 func NewGetV0CityByCityNameAgentByBaseOutputRequest(server string, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams) (*http.Request, error) {
 	var err error
@@ -12000,6 +12226,91 @@ func NewGetV0CityByCityNameAgentByDirByBaseFullRequest(server string, cityName s
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPatchV0CityByCityNameAgentByDirByBaseFullRequest calls the generic PatchV0CityByCityNameAgentByDirByBaseFull builder with application/json body
+func NewPatchV0CityByCityNameAgentByDirByBaseFullRequest(server string, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, body PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchV0CityByCityNameAgentByDirByBaseFullRequestWithBody(server, cityName, dir, base, params, "application/json", bodyReader)
+}
+
+// NewPatchV0CityByCityNameAgentByDirByBaseFullRequestWithBody generates requests for PatchV0CityByCityNameAgentByDirByBaseFull with any type of body
+func NewPatchV0CityByCityNameAgentByDirByBaseFullRequestWithBody(server string, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "cityName", cityName, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "dir", dir, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "base", base, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v0/city/%s/agent/%s/%s/full", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-GC-Request", params.XGCRequest, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-GC-Request", headerParam0)
+
+		if params.IfMatch != nil {
+			var headerParam1 string
+
+			headerParam1, err = runtime.StyleParamWithOptions("simple", false, "If-Match", *params.IfMatch, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("If-Match", headerParam1)
+		}
+
 	}
 
 	return req, nil
@@ -20434,6 +20745,11 @@ type ClientWithResponsesInterface interface {
 	// GetV0CityByCityNameAgentByBaseFullWithResponse request
 	GetV0CityByCityNameAgentByBaseFullWithResponse(ctx context.Context, cityName string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseFullResponse, error)
 
+	// PatchV0CityByCityNameAgentByBaseFullWithBodyWithResponse request with any body
+	PatchV0CityByCityNameAgentByBaseFullWithBodyWithResponse(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByBaseFullResponse, error)
+
+	PatchV0CityByCityNameAgentByBaseFullWithResponse(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, body PatchV0CityByCityNameAgentByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByBaseFullResponse, error)
+
 	// GetV0CityByCityNameAgentByBaseOutputWithResponse request
 	GetV0CityByCityNameAgentByBaseOutputWithResponse(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseOutputResponse, error)
 
@@ -20456,6 +20772,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetV0CityByCityNameAgentByDirByBaseFullWithResponse request
 	GetV0CityByCityNameAgentByDirByBaseFullWithResponse(ctx context.Context, cityName string, dir string, base string, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByDirByBaseFullResponse, error)
+
+	// PatchV0CityByCityNameAgentByDirByBaseFullWithBodyWithResponse request with any body
+	PatchV0CityByCityNameAgentByDirByBaseFullWithBodyWithResponse(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByDirByBaseFullResponse, error)
+
+	PatchV0CityByCityNameAgentByDirByBaseFullWithResponse(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, body PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByDirByBaseFullResponse, error)
 
 	// GetV0CityByCityNameAgentByDirByBaseOutputWithResponse request
 	GetV0CityByCityNameAgentByDirByBaseOutputWithResponse(ctx context.Context, cityName string, dir string, base string, params *GetV0CityByCityNameAgentByDirByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByDirByBaseOutputResponse, error)
@@ -21124,6 +21445,29 @@ func (r GetV0CityByCityNameAgentByBaseFullResponse) StatusCode() int {
 	return 0
 }
 
+type PatchV0CityByCityNameAgentByBaseFullResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *AgentFullResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchV0CityByCityNameAgentByBaseFullResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchV0CityByCityNameAgentByBaseFullResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetV0CityByCityNameAgentByBaseOutputResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -21278,6 +21622,29 @@ func (r GetV0CityByCityNameAgentByDirByBaseFullResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetV0CityByCityNameAgentByDirByBaseFullResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PatchV0CityByCityNameAgentByDirByBaseFullResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *AgentFullResponse
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchV0CityByCityNameAgentByDirByBaseFullResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchV0CityByCityNameAgentByDirByBaseFullResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -24352,6 +24719,23 @@ func (c *ClientWithResponses) GetV0CityByCityNameAgentByBaseFullWithResponse(ctx
 	return ParseGetV0CityByCityNameAgentByBaseFullResponse(rsp)
 }
 
+// PatchV0CityByCityNameAgentByBaseFullWithBodyWithResponse request with arbitrary body returning *PatchV0CityByCityNameAgentByBaseFullResponse
+func (c *ClientWithResponses) PatchV0CityByCityNameAgentByBaseFullWithBodyWithResponse(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByBaseFullResponse, error) {
+	rsp, err := c.PatchV0CityByCityNameAgentByBaseFullWithBody(ctx, cityName, base, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchV0CityByCityNameAgentByBaseFullResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchV0CityByCityNameAgentByBaseFullWithResponse(ctx context.Context, cityName string, base string, params *PatchV0CityByCityNameAgentByBaseFullParams, body PatchV0CityByCityNameAgentByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByBaseFullResponse, error) {
+	rsp, err := c.PatchV0CityByCityNameAgentByBaseFull(ctx, cityName, base, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchV0CityByCityNameAgentByBaseFullResponse(rsp)
+}
+
 // GetV0CityByCityNameAgentByBaseOutputWithResponse request returning *GetV0CityByCityNameAgentByBaseOutputResponse
 func (c *ClientWithResponses) GetV0CityByCityNameAgentByBaseOutputWithResponse(ctx context.Context, cityName string, base string, params *GetV0CityByCityNameAgentByBaseOutputParams, reqEditors ...RequestEditorFn) (*GetV0CityByCityNameAgentByBaseOutputResponse, error) {
 	rsp, err := c.GetV0CityByCityNameAgentByBaseOutput(ctx, cityName, base, params, reqEditors...)
@@ -24421,6 +24805,23 @@ func (c *ClientWithResponses) GetV0CityByCityNameAgentByDirByBaseFullWithRespons
 		return nil, err
 	}
 	return ParseGetV0CityByCityNameAgentByDirByBaseFullResponse(rsp)
+}
+
+// PatchV0CityByCityNameAgentByDirByBaseFullWithBodyWithResponse request with arbitrary body returning *PatchV0CityByCityNameAgentByDirByBaseFullResponse
+func (c *ClientWithResponses) PatchV0CityByCityNameAgentByDirByBaseFullWithBodyWithResponse(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByDirByBaseFullResponse, error) {
+	rsp, err := c.PatchV0CityByCityNameAgentByDirByBaseFullWithBody(ctx, cityName, dir, base, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchV0CityByCityNameAgentByDirByBaseFullResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchV0CityByCityNameAgentByDirByBaseFullWithResponse(ctx context.Context, cityName string, dir string, base string, params *PatchV0CityByCityNameAgentByDirByBaseFullParams, body PatchV0CityByCityNameAgentByDirByBaseFullJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchV0CityByCityNameAgentByDirByBaseFullResponse, error) {
+	rsp, err := c.PatchV0CityByCityNameAgentByDirByBaseFull(ctx, cityName, dir, base, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchV0CityByCityNameAgentByDirByBaseFullResponse(rsp)
 }
 
 // GetV0CityByCityNameAgentByDirByBaseOutputWithResponse request returning *GetV0CityByCityNameAgentByDirByBaseOutputResponse
@@ -26169,6 +26570,39 @@ func ParseGetV0CityByCityNameAgentByBaseFullResponse(rsp *http.Response) (*GetV0
 	return response, nil
 }
 
+// ParsePatchV0CityByCityNameAgentByBaseFullResponse parses an HTTP response from a PatchV0CityByCityNameAgentByBaseFullWithResponse call
+func ParsePatchV0CityByCityNameAgentByBaseFullResponse(rsp *http.Response) (*PatchV0CityByCityNameAgentByBaseFullResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchV0CityByCityNameAgentByBaseFullResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentFullResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetV0CityByCityNameAgentByBaseOutputResponse parses an HTTP response from a GetV0CityByCityNameAgentByBaseOutputWithResponse call
 func ParseGetV0CityByCityNameAgentByBaseOutputResponse(rsp *http.Response) (*GetV0CityByCityNameAgentByBaseOutputResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -26369,6 +26803,39 @@ func ParseGetV0CityByCityNameAgentByDirByBaseFullResponse(rsp *http.Response) (*
 	}
 
 	response := &GetV0CityByCityNameAgentByDirByBaseFullResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentFullResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchV0CityByCityNameAgentByDirByBaseFullResponse parses an HTTP response from a PatchV0CityByCityNameAgentByDirByBaseFullWithResponse call
+func ParsePatchV0CityByCityNameAgentByDirByBaseFullResponse(rsp *http.Response) (*PatchV0CityByCityNameAgentByDirByBaseFullResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchV0CityByCityNameAgentByDirByBaseFullResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

@@ -45,6 +45,46 @@ export type AgentCreatedOutputBody = {
     status: string;
 };
 
+export type AgentDefinition = {
+    args?: Array<string> | null;
+    default_sling_formula?: string;
+    description?: string;
+    dir?: string;
+    drain_timeout?: string;
+    env?: {
+        [key: string]: string;
+    };
+    idle_timeout?: string;
+    inject_fragments?: Array<string> | null;
+    max_active_sessions?: number;
+    min_active_sessions?: number;
+    name: string;
+    namepool?: string;
+    nudge?: string;
+    option_defaults?: {
+        [key: string]: string;
+    };
+    overlay_dir?: string;
+    pre_start?: Array<string> | null;
+    prompt_preview?: string;
+    prompt_template?: string;
+    provider?: string;
+    scale_check?: string;
+    scope?: string;
+    session?: string;
+    sleep_after_idle?: string;
+    start_command?: string;
+    suspended: boolean;
+    wake_mode?: string;
+    work_dir?: string;
+    work_query?: string;
+};
+
+export type AgentFullResponse = {
+    definition: AgentDefinition;
+    runtime: unknown;
+};
+
 export type AgentMapping = {
     agent_id: string;
     parent_tool_use_id: string;
@@ -105,6 +145,35 @@ export type AgentPatch = {
     Suspended: boolean | null;
     WakeMode: string | null;
     WorkDir: string | null;
+};
+
+export type AgentPatchRequest = {
+    /**
+     * Go duration string.
+     */
+    drain_timeout?: string;
+    env?: {
+        [key: string]: string;
+    };
+    /**
+     * Go duration string ('30s', '5m', '1h').
+     */
+    idle_timeout?: string;
+    inject_fragments?: Array<string> | null;
+    max_active_sessions?: number;
+    min_active_sessions?: number;
+    nudge?: string;
+    pre_start?: Array<string> | null;
+    provider?: string;
+    scale_check?: string;
+    scope?: 'city' | 'rig';
+    /**
+     * Duration string or 'off'.
+     */
+    sleep_after_idle?: string;
+    suspended?: boolean;
+    wake_mode?: 'resume' | 'fresh';
+    work_dir?: string;
 };
 
 export type AgentPatchSetInputBody = {
@@ -4782,6 +4851,84 @@ export type PatchV0CityByCityNameAgentByBaseResponses = {
 
 export type PatchV0CityByCityNameAgentByBaseResponse = PatchV0CityByCityNameAgentByBaseResponses[keyof PatchV0CityByCityNameAgentByBaseResponses];
 
+export type GetV0CityByCityNameAgentByBaseFullData = {
+    body?: never;
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent name (unqualified, no rig).
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{base}/full';
+};
+
+export type GetV0CityByCityNameAgentByBaseFullErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetV0CityByCityNameAgentByBaseFullError = GetV0CityByCityNameAgentByBaseFullErrors[keyof GetV0CityByCityNameAgentByBaseFullErrors];
+
+export type GetV0CityByCityNameAgentByBaseFullResponses = {
+    /**
+     * OK
+     */
+    200: AgentFullResponse;
+};
+
+export type GetV0CityByCityNameAgentByBaseFullResponse = GetV0CityByCityNameAgentByBaseFullResponses[keyof GetV0CityByCityNameAgentByBaseFullResponses];
+
+export type PatchV0CityByCityNameAgentByBaseFullData = {
+    body: AgentPatchRequest;
+    headers: {
+        /**
+         * Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+         */
+        'X-GC-Request': string;
+        /**
+         * ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.
+         */
+        'If-Match'?: string;
+    };
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent name (unqualified, no rig).
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{base}/full';
+};
+
+export type PatchV0CityByCityNameAgentByBaseFullErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type PatchV0CityByCityNameAgentByBaseFullError = PatchV0CityByCityNameAgentByBaseFullErrors[keyof PatchV0CityByCityNameAgentByBaseFullErrors];
+
+export type PatchV0CityByCityNameAgentByBaseFullResponses = {
+    /**
+     * OK
+     */
+    200: AgentFullResponse;
+};
+
+export type PatchV0CityByCityNameAgentByBaseFullResponse = PatchV0CityByCityNameAgentByBaseFullResponses[keyof PatchV0CityByCityNameAgentByBaseFullResponses];
+
 export type GetV0CityByCityNameAgentByBaseOutputData = {
     body?: never;
     path: {
@@ -5058,6 +5205,92 @@ export type PatchV0CityByCityNameAgentByDirByBaseResponses = {
 };
 
 export type PatchV0CityByCityNameAgentByDirByBaseResponse = PatchV0CityByCityNameAgentByDirByBaseResponses[keyof PatchV0CityByCityNameAgentByDirByBaseResponses];
+
+export type GetV0CityByCityNameAgentByDirByBaseFullData = {
+    body?: never;
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent directory (rig name).
+         */
+        dir: string;
+        /**
+         * Agent base name.
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{dir}/{base}/full';
+};
+
+export type GetV0CityByCityNameAgentByDirByBaseFullErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetV0CityByCityNameAgentByDirByBaseFullError = GetV0CityByCityNameAgentByDirByBaseFullErrors[keyof GetV0CityByCityNameAgentByDirByBaseFullErrors];
+
+export type GetV0CityByCityNameAgentByDirByBaseFullResponses = {
+    /**
+     * OK
+     */
+    200: AgentFullResponse;
+};
+
+export type GetV0CityByCityNameAgentByDirByBaseFullResponse = GetV0CityByCityNameAgentByDirByBaseFullResponses[keyof GetV0CityByCityNameAgentByDirByBaseFullResponses];
+
+export type PatchV0CityByCityNameAgentByDirByBaseFullData = {
+    body: AgentPatchRequest;
+    headers: {
+        /**
+         * Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks.
+         */
+        'X-GC-Request': string;
+        /**
+         * ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict.
+         */
+        'If-Match'?: string;
+    };
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent directory (rig name).
+         */
+        dir: string;
+        /**
+         * Agent base name.
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{dir}/{base}/full';
+};
+
+export type PatchV0CityByCityNameAgentByDirByBaseFullErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type PatchV0CityByCityNameAgentByDirByBaseFullError = PatchV0CityByCityNameAgentByDirByBaseFullErrors[keyof PatchV0CityByCityNameAgentByDirByBaseFullErrors];
+
+export type PatchV0CityByCityNameAgentByDirByBaseFullResponses = {
+    /**
+     * OK
+     */
+    200: AgentFullResponse;
+};
+
+export type PatchV0CityByCityNameAgentByDirByBaseFullResponse = PatchV0CityByCityNameAgentByDirByBaseFullResponses[keyof PatchV0CityByCityNameAgentByDirByBaseFullResponses];
 
 export type GetV0CityByCityNameAgentByDirByBaseOutputData = {
     body?: never;

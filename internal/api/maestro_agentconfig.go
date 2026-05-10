@@ -5,8 +5,16 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 
+	"github.com/gastownhall/gascity/internal/config"
 	"github.com/gastownhall/gascity/internal/maestro/agentconfig"
 )
+
+// errFullPatchNotSupported is the 501 used when the live State doesn't
+// implement agentconfig.FullPatchMutator — i.e., a read-only deployment
+// or a test wiring that forgot the mutator surface. Mirrors the upstream
+// errMutationsNotSupported pattern in huma_types.go but stays in the
+// fork-only file so adding it doesn't require touching upstream code.
+var errFullPatchNotSupported = huma.Error501NotImplemented("agent full-patch mutations not supported")
 
 // This file is part of the Maestro fork extension surface
 // (internal/maestro/* + thin glue here). It is intentionally additive
@@ -45,23 +53,37 @@ func (i *MaestroAgentGetFullQualifiedInput) QualifiedName() string {
 	return joinAgentQualifiedName(i.Dir, i.Base)
 }
 
+// MaestroAgentGetFullOutput mirrors IndexOutput[AgentFullResponse] but
+// adds the ETag response header so studio clients can capture the
+// definition's current content hash on read and replay it as If-Match
+// on the next PATCH /full. ETag generation is centralized in
+// agentconfig.ComputeAgentETag so GET and PATCH never disagree on the
+// hash for a given snapshot.
+type MaestroAgentGetFullOutput struct {
+	Index uint64 `header:"X-GC-Index" doc:"Latest event sequence number."`
+	ETag  string `header:"ETag" doc:"Opaque content hash of the agent definition. Use as If-Match on the next PATCH."`
+	Body  agentconfig.AgentFullResponse
+}
+
 // humaHandleMaestroAgentGetFull is the Huma-typed handler for the
 // fork-only GET /v0/city/{cityName}/agent/{base}/full (unqualified form).
-func (s *Server) humaHandleMaestroAgentGetFull(ctx context.Context, input *MaestroAgentGetFullInput) (*IndexOutput[agentconfig.AgentFullResponse], error) {
+func (s *Server) humaHandleMaestroAgentGetFull(ctx context.Context, input *MaestroAgentGetFullInput) (*MaestroAgentGetFullOutput, error) {
 	return s.maestroAgentFullByName(ctx, input.Name)
 }
 
 // humaHandleMaestroAgentGetFullQualified is the Huma-typed handler for
 // the fork-only GET /v0/city/{cityName}/agent/{dir}/{base}/full
 // (qualified form).
-func (s *Server) humaHandleMaestroAgentGetFullQualified(ctx context.Context, input *MaestroAgentGetFullQualifiedInput) (*IndexOutput[agentconfig.AgentFullResponse], error) {
+func (s *Server) humaHandleMaestroAgentGetFullQualified(ctx context.Context, input *MaestroAgentGetFullQualifiedInput) (*MaestroAgentGetFullOutput, error) {
 	return s.maestroAgentFullByName(ctx, input.QualifiedName())
 }
 
 // maestroAgentFullByName composes the upstream runtime view returned by
 // agentByName with the fork-only AgentDefinition built from the same
-// city Config snapshot. Read-only; PATCH support is a follow-up phase.
-func (s *Server) maestroAgentFullByName(_ context.Context, name string) (*IndexOutput[agentconfig.AgentFullResponse], error) {
+// city Config snapshot, then attaches the definition's ETag for
+// optimistic-concurrency clients. Shared by GET /full and the post-PATCH
+// recomposition path so both surfaces read from one source of truth.
+func (s *Server) maestroAgentFullByName(_ context.Context, name string) (*MaestroAgentGetFullOutput, error) {
 	if name == "" {
 		return nil, huma.Error400BadRequest("agent name required")
 	}
@@ -79,12 +101,107 @@ func (s *Server) maestroAgentFullByName(_ context.Context, name string) (*IndexO
 		return nil, huma.Error404NotFound("agent " + name + " not found")
 	}
 
-	return &IndexOutput[agentconfig.AgentFullResponse]{
+	def := agentconfig.BuildDefinition(&agentCfg)
+	return &MaestroAgentGetFullOutput{
 		Index: runtime.Index,
+		ETag:  agentconfig.ComputeAgentETag(def),
 		Body: agentconfig.AgentFullResponse{
 			Runtime:    runtime.Body,
-			Definition: agentconfig.BuildDefinition(&agentCfg),
+			Definition: def,
 		},
+	}, nil
+}
+
+// MaestroAgentPatchFullInput is the Huma input for
+// PATCH /v0/city/{cityName}/agent/{base}/full.
+type MaestroAgentPatchFullInput struct {
+	CityScope
+	Name    string                        `path:"base" doc:"Agent name (unqualified, no rig)."`
+	IfMatch string                        `header:"If-Match" doc:"ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict."`
+	Body    agentconfig.AgentPatchRequest `contentType:"application/json"`
+}
+
+// MaestroAgentPatchFullQualifiedInput is the Huma input for
+// PATCH /v0/city/{cityName}/agent/{dir}/{base}/full.
+type MaestroAgentPatchFullQualifiedInput struct {
+	CityScope
+	Dir     string                        `path:"dir" doc:"Agent directory (rig name)."`
+	Base    string                        `path:"base" doc:"Agent base name."`
+	IfMatch string                        `header:"If-Match" doc:"ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict."`
+	Body    agentconfig.AgentPatchRequest `contentType:"application/json"`
+}
+
+// QualifiedName joins dir and base into a canonical agent name.
+func (i *MaestroAgentPatchFullQualifiedInput) QualifiedName() string {
+	return joinAgentQualifiedName(i.Dir, i.Base)
+}
+
+// MaestroAgentPatchFullOutput mirrors IndexOutput[AgentFullResponse] but
+// adds the ETag response header so PATCH callers can chain optimistic
+// concurrency: the ETag returned here is the same hash GET /full would
+// emit on the next read, valid as If-Match for the next PATCH.
+type MaestroAgentPatchFullOutput struct {
+	Index uint64 `header:"X-GC-Index" doc:"Latest event sequence number."`
+	ETag  string `header:"ETag" doc:"Opaque content hash of the agent definition. Use as If-Match on the next PATCH."`
+	Body  agentconfig.AgentFullResponse
+}
+
+// humaHandleMaestroAgentPatchFull is the Huma-typed handler for the
+// fork-only PATCH /v0/city/{cityName}/agent/{base}/full (unqualified form).
+func (s *Server) humaHandleMaestroAgentPatchFull(ctx context.Context, input *MaestroAgentPatchFullInput) (*MaestroAgentPatchFullOutput, error) {
+	return s.maestroAgentPatchFullByName(ctx, input.Name, input.IfMatch, input.Body)
+}
+
+// humaHandleMaestroAgentPatchFullQualified is the Huma-typed handler for
+// the qualified form.
+func (s *Server) humaHandleMaestroAgentPatchFullQualified(ctx context.Context, input *MaestroAgentPatchFullQualifiedInput) (*MaestroAgentPatchFullOutput, error) {
+	return s.maestroAgentPatchFullByName(ctx, input.QualifiedName(), input.IfMatch, input.Body)
+}
+
+// maestroAgentPatchFullByName is the shared dispatch for the qualified and
+// unqualified PATCH /full handlers. It:
+//
+//  1. validates the agent exists (404 otherwise),
+//  2. computes the current ETag and compares with If-Match (409 on stale),
+//  3. dispatches the patch through the State's FullPatchMutator surface,
+//  4. recomposes the response from the post-patch snapshot, returning
+//     the new ETag so callers can chain optimistic-concurrency PATCHes.
+//
+// Step 4 calls back into maestroAgentFullByName so PATCH and GET share a
+// single source of truth for the response shape.
+func (s *Server) maestroAgentPatchFullByName(ctx context.Context, name, ifMatch string, body agentconfig.AgentPatchRequest) (*MaestroAgentPatchFullOutput, error) {
+	if name == "" {
+		return nil, huma.Error400BadRequest("agent name required")
+	}
+
+	mutator, ok := s.state.(agentconfig.FullPatchMutator)
+	if !ok {
+		return nil, errFullPatchNotSupported
+	}
+
+	pre, err := s.maestroAgentFullByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	if ifMatch != "" && ifMatch != pre.ETag {
+		return nil, huma.Error409Conflict("agent definition changed; refresh and retry")
+	}
+
+	dir, base := config.ParseQualifiedName(name)
+	patch := agentconfig.BuildConfigAgentPatch(body, dir, base)
+	if err := mutator.ApplyAgentPatchFull(name, patch); err != nil {
+		return nil, mutationError(err)
+	}
+
+	post, err := s.maestroAgentFullByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MaestroAgentPatchFullOutput{
+		Index: post.Index,
+		ETag:  post.ETag,
+		Body:  post.Body,
 	}, nil
 }
 
@@ -101,4 +218,6 @@ func (s *Server) maestroAgentFullByName(_ context.Context, name string) (*IndexO
 func (sm *SupervisorMux) registerMaestroRoutes() {
 	cityGet(sm, "/agent/{base}/full", (*Server).humaHandleMaestroAgentGetFull)
 	cityGet(sm, "/agent/{dir}/{base}/full", (*Server).humaHandleMaestroAgentGetFullQualified)
+	cityPatch(sm, "/agent/{base}/full", (*Server).humaHandleMaestroAgentPatchFull)
+	cityPatch(sm, "/agent/{dir}/{base}/full", (*Server).humaHandleMaestroAgentPatchFullQualified)
 }

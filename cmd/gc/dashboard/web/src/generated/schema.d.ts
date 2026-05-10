@@ -92,6 +92,24 @@ export interface paths {
         patch: operations["patch-v0-city-by-city-name-agent-by-base"];
         trace?: never;
     };
+    "/v0/city/{cityName}/agent/{base}/full": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get v0 city by city name agent by base full */
+        get: operations["get-v0-city-by-city-name-agent-by-base-full"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch v0 city by city name agent by base full */
+        patch: operations["patch-v0-city-by-city-name-agent-by-base-full"];
+        trace?: never;
+    };
     "/v0/city/{cityName}/agent/{base}/output": {
         parameters: {
             query?: never;
@@ -163,6 +181,24 @@ export interface paths {
         head?: never;
         /** Patch v0 city by city name agent by dir by base */
         patch: operations["patch-v0-city-by-city-name-agent-by-dir-by-base"];
+        trace?: never;
+    };
+    "/v0/city/{cityName}/agent/{dir}/{base}/full": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get v0 city by city name agent by dir by base full */
+        get: operations["get-v0-city-by-city-name-agent-by-dir-by-base-full"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch v0 city by city name agent by dir by base full */
+        patch: operations["patch-v0-city-by-city-name-agent-by-dir-by-base-full"];
         trace?: never;
     };
     "/v0/city/{cityName}/agent/{dir}/{base}/output": {
@@ -1948,6 +1984,46 @@ export interface components {
              */
             status: string;
         };
+        AgentDefinition: {
+            args?: string[] | null;
+            default_sling_formula?: string;
+            description?: string;
+            dir?: string;
+            drain_timeout?: string;
+            env?: {
+                [key: string]: string;
+            };
+            idle_timeout?: string;
+            inject_fragments?: string[] | null;
+            /** Format: int64 */
+            max_active_sessions?: number;
+            /** Format: int64 */
+            min_active_sessions?: number;
+            name: string;
+            namepool?: string;
+            nudge?: string;
+            option_defaults?: {
+                [key: string]: string;
+            };
+            overlay_dir?: string;
+            pre_start?: string[] | null;
+            prompt_preview?: string;
+            prompt_template?: string;
+            provider?: string;
+            scale_check?: string;
+            scope?: string;
+            session?: string;
+            sleep_after_idle?: string;
+            start_command?: string;
+            suspended: boolean;
+            wake_mode?: string;
+            work_dir?: string;
+            work_query?: string;
+        };
+        AgentFullResponse: {
+            definition: components["schemas"]["AgentDefinition"];
+            runtime: unknown;
+        };
         AgentMapping: {
             agent_id: string;
             parent_tool_use_id: string;
@@ -2008,6 +2084,32 @@ export interface components {
             Suspended: boolean | null;
             WakeMode: string | null;
             WorkDir: string | null;
+        };
+        AgentPatchRequest: {
+            /** @description Go duration string. */
+            drain_timeout?: string;
+            env?: {
+                [key: string]: string;
+            };
+            /** @description Go duration string ('30s', '5m', '1h'). */
+            idle_timeout?: string;
+            inject_fragments?: string[] | null;
+            /** Format: int64 */
+            max_active_sessions?: number;
+            /** Format: int64 */
+            min_active_sessions?: number;
+            nudge?: string;
+            pre_start?: string[] | null;
+            provider?: string;
+            scale_check?: string;
+            /** @enum {string} */
+            scope?: "city" | "rig";
+            /** @description Duration string or 'off'. */
+            sleep_after_idle?: string;
+            suspended?: boolean;
+            /** @enum {string} */
+            wake_mode?: "resume" | "fresh";
+            work_dir?: string;
         };
         AgentPatchSetInputBody: {
             /** @description Agent directory scope. */
@@ -6124,6 +6226,91 @@ export interface operations {
             };
         };
     };
+    "get-v0-city-by-city-name-agent-by-base-full": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent name (unqualified, no rig). */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Index"?: number;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentFullResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "patch-v0-city-by-city-name-agent-by-base-full": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks. */
+                "X-GC-Request": string;
+                /** @description ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict. */
+                "If-Match"?: string;
+            };
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent name (unqualified, no rig). */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Index"?: number;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentFullResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "get-v0-city-by-city-name-agent-by-base-output": {
         parameters: {
             query?: {
@@ -6377,6 +6564,95 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OKResponseBody"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-v0-city-by-city-name-agent-by-dir-by-base-full": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent directory (rig name). */
+                dir: string;
+                /** @description Agent base name. */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Index"?: number;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentFullResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "patch-v0-city-by-city-name-agent-by-dir-by-base-full": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Anti-CSRF header required on mutation requests. Any non-empty value is accepted; the header's presence is what the server checks. */
+                "X-GC-Request": string;
+                /** @description ETag returned by the most recent GET /full. When present and stale, the request is rejected with 409 Conflict. */
+                "If-Match"?: string;
+            };
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent directory (rig name). */
+                dir: string;
+                /** @description Agent base name. */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Index"?: number;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentFullResponse"];
                 };
             };
             /** @description Error */
