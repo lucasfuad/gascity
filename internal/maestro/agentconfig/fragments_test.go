@@ -1,8 +1,12 @@
 package agentconfig
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/gastownhall/gascity/internal/fsys"
 )
 
 func TestComputeFragmentsETag_Deterministic(t *testing.T) {
@@ -49,5 +53,45 @@ func TestComputeFragmentsETag_EmptyList(t *testing.T) {
 	got := ComputeFragmentsETag(nil)
 	if got == "" {
 		t.Error("ETag for nil list should still be non-empty quoted hash")
+	}
+}
+
+// setupCityWithAgent writes a minimal city tree under t.TempDir() and
+// returns (cityPath, agentBase). Each map entry is a path relative to
+// the city root and its file content. Parent directories are created
+// automatically. Used by the ListAgentFragments tests.
+func setupCityWithAgent(t *testing.T, files map[string]string) (string, string) {
+	t.Helper()
+	root := t.TempDir()
+	for rel, content := range files {
+		full := filepath.Join(root, rel)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatalf("mkdir %s: %v", filepath.Dir(full), err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", full, err)
+		}
+	}
+	return root, "worker"
+}
+
+func TestListAgentFragments_EmptyDirs(t *testing.T) {
+	t.Parallel()
+	cityPath, agentBase := setupCityWithAgent(t, map[string]string{
+		"city.toml": `[workspace]
+name = "test"
+
+[[agent]]
+name = "worker"
+prompt_template = "prompts/worker.template.md"
+`,
+		"prompts/worker.template.md": `# bare body, no fragments`,
+	})
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, agentBase)
+	if err != nil {
+		t.Fatalf("ListAgentFragments: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("expected empty list, got %d entries: %v", len(got), got)
 	}
 }
