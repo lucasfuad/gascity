@@ -39,7 +39,10 @@ type AgentPatchRequest struct {
 
 	Env             map[string]string `json:"env,omitempty"`
 	PreStart        []string          `json:"pre_start,omitempty"`
-	InjectFragments []string          `json:"inject_fragments,omitempty"`
+	// InjectFragments mirrors upstream config.AgentPatch.InjectFragments
+	// presence-aware semantics (PR #1952): nil = leave unchanged; non-nil
+	// empty pointer = clear; non-nil populated = replace.
+	InjectFragments *[]string `json:"inject_fragments,omitempty"`
 }
 
 // BuildConfigAgentPatch maps an AgentPatchRequest into the upstream
@@ -84,7 +87,7 @@ func BuildConfigAgentPatch(req AgentPatchRequest, dir, name string) config.Agent
 	if len(req.PreStart) > 0 {
 		p.PreStart = req.PreStart
 	}
-	if len(req.InjectFragments) > 0 {
+	if req.InjectFragments != nil {
 		p.InjectFragments = req.InjectFragments
 	}
 

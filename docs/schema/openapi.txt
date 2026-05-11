@@ -655,10 +655,7 @@
             "items": {
               "type": "string"
             },
-            "type": [
-              "array",
-              "null"
-            ]
+            "type": "array"
           },
           "max_active_sessions": {
             "format": "int64",

@@ -98,8 +98,9 @@ func mergeFakeAgentPatch(dst *config.AgentPatch, src config.AgentPatch) {
 	if len(src.PreStart) > 0 {
 		dst.PreStart = append([]string(nil), src.PreStart...)
 	}
-	if len(src.InjectFragments) > 0 {
-		dst.InjectFragments = append([]string(nil), src.InjectFragments...)
+	if src.InjectFragments != nil {
+		cloned := append([]string(nil), (*src.InjectFragments)...)
+		dst.InjectFragments = &cloned
 	}
 	if src.Pool != nil {
 		if dst.Pool == nil {

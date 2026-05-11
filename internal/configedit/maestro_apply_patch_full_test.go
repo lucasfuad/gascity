@@ -260,7 +260,7 @@ provider = "claude"
 		WakeMode:        &wake,
 		Env:             map[string]string{"FOO": "bar"},
 		PreStart:        []string{"./pre.sh"},
-		InjectFragments: []string{"frag-a"},
+		InjectFragments: config.Fragments("frag-a"),
 		Pool: &config.PoolOverride{
 			Min:          &minSess,
 			Max:          &maxSess,
@@ -322,8 +322,8 @@ provider = "claude"
 	if len(p.PreStart) != 1 || p.PreStart[0] != "./pre.sh" {
 		t.Errorf("PreStart = %v, want preserved [./pre.sh]", p.PreStart)
 	}
-	if len(p.InjectFragments) != 1 || p.InjectFragments[0] != "frag-a" {
-		t.Errorf("InjectFragments = %v, want preserved [frag-a]", p.InjectFragments)
+	if p.InjectFragments == nil || len(*p.InjectFragments) != 1 || (*p.InjectFragments)[0] != "frag-a" {
+		t.Errorf("InjectFragments = %v, want preserved &[frag-a]", p.InjectFragments)
 	}
 	if p.Pool == nil {
 		t.Fatal("Pool nil after merge")

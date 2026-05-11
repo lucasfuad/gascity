@@ -88,7 +88,7 @@ func TestBuildConfigAgentPatch_TableDriven(t *testing.T) {
 			req: AgentPatchRequest{
 				Env:             map[string]string{"FOO": "bar", "BAZ": "qux"},
 				PreStart:        []string{"echo a", "echo b"},
-				InjectFragments: []string{"frag-a"},
+				InjectFragments: config.Fragments("frag-a"),
 			},
 			dir:  "",
 			base: "boot",
@@ -97,7 +97,7 @@ func TestBuildConfigAgentPatch_TableDriven(t *testing.T) {
 				Name:            "boot",
 				Env:             map[string]string{"FOO": "bar", "BAZ": "qux"},
 				PreStart:        []string{"echo a", "echo b"},
-				InjectFragments: []string{"frag-a"},
+				InjectFragments: config.Fragments("frag-a"),
 			},
 		},
 		{
