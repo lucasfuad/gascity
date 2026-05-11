@@ -758,7 +758,7 @@
             "type": "string"
           },
           "type": "array",
-          "description": "InjectFragments overrides the agent's inject_fragments list."
+          "description": "InjectFragments overrides the agent's inject_fragments list.\nPointer-to-slice gives this field presence-aware semantics across\nthe three states the wire / TOML / Go layers must distinguish:\n\n  nil           — key absent, \"leave unchanged\" (no-op merge).\n  \u0026[]string{}   — key present with empty list, \"clear\" — replaces\n                  the agent's inject_fragments with the empty list.\n                  Without the pointer, omitempty drops `[]` on TOML\n                  encode and a clear silently no-ops on the next\n                  reload (callers cannot distinguish absent from\n                  present-empty).\n  \u0026[]string{…}  — key present with values, \"replace with this list\".\n\nThis field intentionally diverges from the `len \u003e 0` pattern\nshared by other AgentPatch list fields (PreStart, DependsOn,\nSessionSetup, etc.). Adopting the same presence-aware pattern\nfield by field is the natural follow-up whenever a clear UX\nsurfaces for those. Construct via Fragments() to keep callers\nterse."
         },
         "append_fragments": {
           "items": {

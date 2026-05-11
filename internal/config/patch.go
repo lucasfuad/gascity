@@ -96,7 +96,25 @@ type AgentPatch struct {
 	// DefaultSlingFormula overrides the default sling formula.
 	DefaultSlingFormula *string `toml:"default_sling_formula,omitempty"`
 	// InjectFragments overrides the agent's inject_fragments list.
-	InjectFragments []string `toml:"inject_fragments,omitempty"`
+	// Pointer-to-slice gives this field presence-aware semantics across
+	// the three states the wire / TOML / Go layers must distinguish:
+	//
+	//   nil           — key absent, "leave unchanged" (no-op merge).
+	//   &[]string{}   — key present with empty list, "clear" — replaces
+	//                   the agent's inject_fragments with the empty list.
+	//                   Without the pointer, omitempty drops `[]` on TOML
+	//                   encode and a clear silently no-ops on the next
+	//                   reload (callers cannot distinguish absent from
+	//                   present-empty).
+	//   &[]string{…}  — key present with values, "replace with this list".
+	//
+	// This field intentionally diverges from the `len > 0` pattern
+	// shared by other AgentPatch list fields (PreStart, DependsOn,
+	// SessionSetup, etc.). Adopting the same presence-aware pattern
+	// field by field is the natural follow-up whenever a clear UX
+	// surfaces for those. Construct via Fragments() to keep callers
+	// terse.
+	InjectFragments *[]string `toml:"inject_fragments,omitempty"`
 	// AppendFragments overrides the agent's append_fragments list.
 	AppendFragments []string `toml:"append_fragments,omitempty"`
 	// Attach overrides the agent's attach setting.
@@ -209,6 +227,31 @@ type ProviderPatch struct {
 // IsEmpty reports whether p has no patch operations.
 func (p *Patches) IsEmpty() bool {
 	return len(p.Agents) == 0 && len(p.Rigs) == 0 && len(p.Providers) == 0
+}
+
+// Fragments returns a pointer to the given inject_fragments list for use
+// in AgentPatch literals. Mirrors the three presence-aware states of
+// AgentPatch.InjectFragments:
+//
+//	Fragments()                 // → &[]string{}    — clear (replace with empty list)
+//	Fragments("frag-a")         // → &[]string{"frag-a"}    — replace with single item
+//	Fragments("frag-a", "...")  // → &[]string{...}          — replace with the list
+//	                            // nil   — leave unchanged (don't call Fragments)
+//
+// Calling Fragments() with no arguments is the canonical clear; it
+// makes the intent visible at the call site without ad-hoc
+// `&[]string{}` literals.
+func Fragments(items ...string) *[]string {
+	if items == nil {
+		items = []string{}
+	}
+	out := append([]string(nil), items...)
+	if out == nil {
+		// `append(nil, ...empty...)` returns nil; force a non-nil empty
+		// slice so the pointer dereferences to the clear signal.
+		out = []string{}
+	}
+	return &out
 }
 
 // ApplyPatches applies all patches to the config. Patches target existing
@@ -344,8 +387,21 @@ func applyAgentPatchFields(a *Agent, p *AgentPatch) {
 	if p.WakeMode != nil {
 		a.WakeMode = *p.WakeMode
 	}
-	if len(p.InjectFragments) > 0 {
-		a.InjectFragments = append([]string(nil), p.InjectFragments...)
+	// InjectFragments uses presence-aware semantics via *[]string: a nil
+	// pointer means "leave unchanged"; a non-nil pointer (even to an
+	// empty slice) means "replace the agent's list with exactly this
+	// value". The pointer travels through TOML write/read intact —
+	// `inject_fragments = []` in a [[patches.agent]] block survives
+	// round-trip and clears an inherited list. Without this, downstream
+	// editors that want to clear a pack-baseline inject_fragments
+	// silently no-op because TOML's omitempty drops `[]string{}` on
+	// encode. The existing `len > 0` pattern remains for `depends_on`,
+	// `pre_start`, `session_setup`, and other list fields whose UX
+	// hasn't asked for clearing yet (see TODO above) — the same
+	// presence-aware pattern can be adopted field by field as the need
+	// arises.
+	if p.InjectFragments != nil {
+		a.InjectFragments = append([]string(nil), (*p.InjectFragments)...)
 	}
 	if len(p.AppendFragments) > 0 {
 		a.AppendFragments = append([]string(nil), p.AppendFragments...)
