@@ -466,6 +466,16 @@ func TestCityRuntimeRunStartupPreflightsManagedDoltBeforeSessionSnapshot(t *test
 	tomlPath := filepath.Join(cityPath, "city.toml")
 	writeCityRuntimeConfig(t, tomlPath, "fake")
 	t.Setenv("GC_BEADS", "bd")
+	// cr.run(ctx) drives the full startup path, which spawns a dolt
+	// sql-server via gc-beads-bd.sh when GC_BEADS=bd. The cleanup
+	// registered by newTestCityRuntime (cr.shutdown) does not reach
+	// shutdownBeadsProvider, so the dolt child outlives the test and
+	// the leak detector (registered by writeCityRuntimeConfig) fails.
+	// LIFO cleanup ordering: this runs before the leak-detector
+	// snapshot, killing the dolt before it gets counted.
+	t.Cleanup(func() {
+		_ = shutdownBeadsProvider(cityPath)
+	})
 
 	cfg, err := config.Load(osFS{}, tomlPath)
 	if err != nil {
