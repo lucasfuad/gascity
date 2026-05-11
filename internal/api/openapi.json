@@ -3257,6 +3257,47 @@
         ],
         "type": "object"
       },
+      "FragmentRef": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "Fragment name as exposed via tmpl.Lookup (the X in {{define \"X\"}}).",
+            "type": "string"
+          },
+          "sha": {
+            "description": "SHA-256 (hex, first 16 chars) of the source file's full contents.",
+            "type": "string"
+          },
+          "source": {
+            "description": "Path to the file containing the fragment, relative to the city path.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "source",
+          "sha"
+        ],
+        "type": "object"
+      },
+      "FragmentsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "fragments": {
+            "items": {
+              "$ref": "#/components/schemas/FragmentRef"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "fragments"
+        ],
+        "type": "object"
+      },
       "GitStatus": {
         "additionalProperties": false,
         "properties": {
@@ -12628,6 +12669,83 @@
         "summary": "Patch v0 city by city name agent by base"
       }
     },
+    "/v0/city/{cityName}/agent/{base}/fragments": {
+      "get": {
+        "operationId": "get-v0-city-by-city-name-agent-by-base-fragments",
+        "parameters": [
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent name (unqualified, no rig).",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent name (unqualified, no rig).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body.",
+            "in": "header",
+            "name": "If-None-Match",
+            "schema": {
+              "description": "ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FragmentsResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash over the ordered (name, source, sha) sequence. Use as If-None-Match on the next GET to receive a 304.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Get v0 city by city name agent by base fragments"
+      }
+    },
     "/v0/city/{cityName}/agent/{base}/full": {
       "get": {
         "operationId": "get-v0-city-by-city-name-agent-by-base-full",
@@ -13615,6 +13733,93 @@
           }
         },
         "summary": "Patch v0 city by city name agent by dir by base"
+      }
+    },
+    "/v0/city/{cityName}/agent/{dir}/{base}/fragments": {
+      "get": {
+        "operationId": "get-v0-city-by-city-name-agent-by-dir-by-base-fragments",
+        "parameters": [
+          {
+            "description": "City name.",
+            "in": "path",
+            "name": "cityName",
+            "required": true,
+            "schema": {
+              "description": "City name.",
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent directory (rig name).",
+            "in": "path",
+            "name": "dir",
+            "required": true,
+            "schema": {
+              "description": "Agent directory (rig name).",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent base name.",
+            "in": "path",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "description": "Agent base name.",
+              "type": "string"
+            }
+          },
+          {
+            "description": "ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body.",
+            "in": "header",
+            "name": "If-None-Match",
+            "schema": {
+              "description": "ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FragmentsResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "description": "Opaque content hash over the ordered (name, source, sha) sequence. Use as If-None-Match on the next GET to receive a 304.",
+                  "type": "string"
+                }
+              },
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error",
+            "headers": {
+              "X-GC-Request-Id": {
+                "$ref": "#/components/headers/X-GC-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Get v0 city by city name agent by dir by base fragments"
       }
     },
     "/v0/city/{cityName}/agent/{dir}/{base}/full": {

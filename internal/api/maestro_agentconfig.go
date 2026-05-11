@@ -409,6 +409,40 @@ func (i *MaestroAgentPutPromptTemplateQualifiedInput) QualifiedName() string {
 	return joinAgentQualifiedName(i.Dir, i.Base)
 }
 
+// MaestroAgentGetFragmentsInput is the Huma input for the fork-only
+// GET /v0/city/{cityName}/agent/{base}/fragments — discovery list of
+// the fragments that the supervisor's renderPrompt would resolve via
+// tmpl.Lookup for this agent. If-None-Match short-circuits to 304
+// when the client already has the current representation.
+type MaestroAgentGetFragmentsInput struct {
+	CityScope
+	Name        string `path:"base" doc:"Agent name (unqualified, no rig)."`
+	IfNoneMatch string `header:"If-None-Match" doc:"ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body."`
+}
+
+// MaestroAgentGetFragmentsQualifiedInput is the rig-scoped variant.
+type MaestroAgentGetFragmentsQualifiedInput struct {
+	CityScope
+	Dir         string `path:"dir" doc:"Agent directory (rig name)."`
+	Base        string `path:"base" doc:"Agent base name."`
+	IfNoneMatch string `header:"If-None-Match" doc:"ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body."`
+}
+
+// QualifiedName joins dir and base into a canonical agent name.
+func (i *MaestroAgentGetFragmentsQualifiedInput) QualifiedName() string {
+	return joinAgentQualifiedName(i.Dir, i.Base)
+}
+
+// MaestroAgentFragmentsOutput carries the GET response body plus the
+// aggregate content-hash ETag header. The Status field is populated
+// only for the 304 short-circuit; the Body is empty in that case.
+// Same shape pattern as MaestroAgentPromptTemplateOutput.
+type MaestroAgentFragmentsOutput struct {
+	Status int    `header:"-"`
+	ETag   string `header:"ETag" doc:"Opaque content hash over the ordered (name, source, sha) sequence. Use as If-None-Match on the next GET to receive a 304."`
+	Body   agentconfig.FragmentsResponse
+}
+
 // humaHandleMaestroAgentGetPromptTemplate is the Huma-typed handler
 // for the fork-only GET .../agent/{base}/prompt-template (unqualified
 // form). Reads the template content from disk and emits a
@@ -510,6 +544,51 @@ func (s *Server) maestroAgentWritePromptTemplate(name, ifMatch, content string) 
 	}, nil
 }
 
+// humaHandleMaestroAgentGetFragments is the Huma-typed handler for the
+// fork-only GET .../agent/{base}/fragments (unqualified form). Live-
+// scans the four pack/agent fragment directories on every call —
+// parity with cmd/gc/prompt.go loadSharedTemplates — and returns the
+// names exposed via {{define "X"}}. ETag short-circuits 304 when the
+// client already has the current representation.
+func (s *Server) humaHandleMaestroAgentGetFragments(_ context.Context, input *MaestroAgentGetFragmentsInput) (*MaestroAgentFragmentsOutput, error) {
+	return s.maestroAgentReadFragments(input.Name, input.IfNoneMatch)
+}
+
+// humaHandleMaestroAgentGetFragmentsQualified is the qualified
+// (rig-scoped) variant of GET fragments.
+func (s *Server) humaHandleMaestroAgentGetFragmentsQualified(_ context.Context, input *MaestroAgentGetFragmentsQualifiedInput) (*MaestroAgentFragmentsOutput, error) {
+	return s.maestroAgentReadFragments(input.QualifiedName(), input.IfNoneMatch)
+}
+
+// maestroAgentReadFragments is the shared GET body. The 404 path maps
+// agentconfig.ErrAgentNotFound to the standard problem+json shape,
+// mirroring how resolveAgentPromptTemplate handles its agent-missing
+// branch. Filesystem-level errors surface as 500.
+func (s *Server) maestroAgentReadFragments(name, ifNoneMatch string) (*MaestroAgentFragmentsOutput, error) {
+	if name == "" {
+		return nil, huma.Error400BadRequest("agent name required")
+	}
+	refs, err := agentconfig.ListAgentFragments(fsys.OSFS{}, s.state.CityPath(), name)
+	if err != nil {
+		var notFound agentconfig.ErrAgentNotFound
+		if errors.As(err, &notFound) {
+			return nil, huma.Error404NotFound("agent " + name + " not found")
+		}
+		return nil, huma.Error500InternalServerError("list fragments: " + err.Error())
+	}
+	etag := agentconfig.ComputeFragmentsETag(refs)
+	if ifNoneMatch != "" && ifNoneMatch == etag {
+		return &MaestroAgentFragmentsOutput{
+			Status: http.StatusNotModified,
+		}, nil
+	}
+	return &MaestroAgentFragmentsOutput{
+		Status: http.StatusOK,
+		ETag:   etag,
+		Body:   agentconfig.FragmentsResponse{Fragments: refs},
+	}, nil
+}
+
 // resolveAgentPromptTemplate is the shared GET/PUT preamble: locate
 // the agent, resolve its prompt_template path against the city root,
 // and surface the three pre-IO error branches (agent not found, no
@@ -572,4 +651,6 @@ func (sm *SupervisorMux) registerMaestroRoutes() {
 	cityGet(sm, "/agent/{dir}/{base}/prompt-template", (*Server).humaHandleMaestroAgentGetPromptTemplateQualified)
 	cityPut(sm, "/agent/{base}/prompt-template", (*Server).humaHandleMaestroAgentPutPromptTemplate)
 	cityPut(sm, "/agent/{dir}/{base}/prompt-template", (*Server).humaHandleMaestroAgentPutPromptTemplateQualified)
+	cityGet(sm, "/agent/{base}/fragments", (*Server).humaHandleMaestroAgentGetFragments)
+	cityGet(sm, "/agent/{dir}/{base}/fragments", (*Server).humaHandleMaestroAgentGetFragmentsQualified)
 }

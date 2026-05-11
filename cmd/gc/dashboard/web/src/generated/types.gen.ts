@@ -215,7 +215,7 @@ export type AgentPatchRequest = {
      * Go duration string ('30s', '5m', '1h').
      */
     idle_timeout?: string;
-    inject_fragments?: Array<string> | null;
+    inject_fragments?: Array<string>;
     max_active_sessions?: number;
     min_active_sessions?: number;
     nudge?: string;
@@ -1246,6 +1246,25 @@ export type FormulaVarDefResponse = {
     pattern?: string;
     required?: boolean;
     type: string;
+};
+
+export type FragmentRef = {
+    /**
+     * Fragment name as exposed via tmpl.Lookup (the X in {{define "X"}}).
+     */
+    name: string;
+    /**
+     * SHA-256 (hex, first 16 chars) of the source file's full contents.
+     */
+    sha: string;
+    /**
+     * Path to the file containing the fragment, relative to the city path.
+     */
+    source: string;
+};
+
+export type FragmentsResponse = {
+    fragments: Array<FragmentRef> | null;
 };
 
 export type GitStatus = {
@@ -4962,6 +4981,46 @@ export type PatchV0CityByCityNameAgentByBaseResponses = {
 
 export type PatchV0CityByCityNameAgentByBaseResponse = PatchV0CityByCityNameAgentByBaseResponses[keyof PatchV0CityByCityNameAgentByBaseResponses];
 
+export type GetV0CityByCityNameAgentByBaseFragmentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body.
+         */
+        'If-None-Match'?: string;
+    };
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent name (unqualified, no rig).
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{base}/fragments';
+};
+
+export type GetV0CityByCityNameAgentByBaseFragmentsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetV0CityByCityNameAgentByBaseFragmentsError = GetV0CityByCityNameAgentByBaseFragmentsErrors[keyof GetV0CityByCityNameAgentByBaseFragmentsErrors];
+
+export type GetV0CityByCityNameAgentByBaseFragmentsResponses = {
+    /**
+     * OK
+     */
+    200: FragmentsResponse;
+};
+
+export type GetV0CityByCityNameAgentByBaseFragmentsResponse = GetV0CityByCityNameAgentByBaseFragmentsResponses[keyof GetV0CityByCityNameAgentByBaseFragmentsResponses];
+
 export type GetV0CityByCityNameAgentByBaseFullData = {
     body?: never;
     path: {
@@ -5434,6 +5493,50 @@ export type PatchV0CityByCityNameAgentByDirByBaseResponses = {
 };
 
 export type PatchV0CityByCityNameAgentByDirByBaseResponse = PatchV0CityByCityNameAgentByDirByBaseResponses[keyof PatchV0CityByCityNameAgentByDirByBaseResponses];
+
+export type GetV0CityByCityNameAgentByDirByBaseFragmentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body.
+         */
+        'If-None-Match'?: string;
+    };
+    path: {
+        /**
+         * City name.
+         */
+        cityName: string;
+        /**
+         * Agent directory (rig name).
+         */
+        dir: string;
+        /**
+         * Agent base name.
+         */
+        base: string;
+    };
+    query?: never;
+    url: '/v0/city/{cityName}/agent/{dir}/{base}/fragments';
+};
+
+export type GetV0CityByCityNameAgentByDirByBaseFragmentsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetV0CityByCityNameAgentByDirByBaseFragmentsError = GetV0CityByCityNameAgentByDirByBaseFragmentsErrors[keyof GetV0CityByCityNameAgentByDirByBaseFragmentsErrors];
+
+export type GetV0CityByCityNameAgentByDirByBaseFragmentsResponses = {
+    /**
+     * OK
+     */
+    200: FragmentsResponse;
+};
+
+export type GetV0CityByCityNameAgentByDirByBaseFragmentsResponse = GetV0CityByCityNameAgentByDirByBaseFragmentsResponses[keyof GetV0CityByCityNameAgentByDirByBaseFragmentsResponses];
 
 export type GetV0CityByCityNameAgentByDirByBaseFullData = {
     body?: never;

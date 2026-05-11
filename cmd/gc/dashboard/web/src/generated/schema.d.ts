@@ -92,6 +92,23 @@ export interface paths {
         patch: operations["patch-v0-city-by-city-name-agent-by-base"];
         trace?: never;
     };
+    "/v0/city/{cityName}/agent/{base}/fragments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get v0 city by city name agent by base fragments */
+        get: operations["get-v0-city-by-city-name-agent-by-base-fragments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v0/city/{cityName}/agent/{base}/full": {
         parameters: {
             query?: never;
@@ -203,6 +220,23 @@ export interface paths {
         head?: never;
         /** Patch v0 city by city name agent by dir by base */
         patch: operations["patch-v0-city-by-city-name-agent-by-dir-by-base"];
+        trace?: never;
+    };
+    "/v0/city/{cityName}/agent/{dir}/{base}/fragments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get v0 city by city name agent by dir by base fragments */
+        get: operations["get-v0-city-by-city-name-agent-by-dir-by-base-fragments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v0/city/{cityName}/agent/{dir}/{base}/full": {
@@ -2180,7 +2214,7 @@ export interface components {
             };
             /** @description Go duration string ('30s', '5m', '1h'). */
             idle_timeout?: string;
-            inject_fragments?: string[] | null;
+            inject_fragments?: string[];
             /** Format: int64 */
             max_active_sessions?: number;
             /** Format: int64 */
@@ -2959,6 +2993,17 @@ export interface components {
             pattern?: string;
             required?: boolean;
             type: string;
+        };
+        FragmentRef: {
+            /** @description Fragment name as exposed via tmpl.Lookup (the X in {{define "X"}}). */
+            name: string;
+            /** @description SHA-256 (hex, first 16 chars) of the source file's full contents. */
+            sha: string;
+            /** @description Path to the file containing the fragment, relative to the city path. */
+            source: string;
+        };
+        FragmentsResponse: {
+            fragments: components["schemas"]["FragmentRef"][] | null;
         };
         GitStatus: {
             /** Format: int64 */
@@ -6363,6 +6408,46 @@ export interface operations {
             };
         };
     };
+    "get-v0-city-by-city-name-agent-by-base-fragments": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body. */
+                "If-None-Match"?: string;
+            };
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent name (unqualified, no rig). */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FragmentsResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "get-v0-city-by-city-name-agent-by-base-full": {
         parameters: {
             query?: never;
@@ -6829,6 +6914,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OKResponseBody"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-v0-city-by-city-name-agent-by-dir-by-base-fragments": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description ETag returned by the most recent GET. When the server's current ETag matches, the response is 304 Not Modified with no body. */
+                "If-None-Match"?: string;
+            };
+            path: {
+                /** @description City name. */
+                cityName: string;
+                /** @description Agent directory (rig name). */
+                dir: string;
+                /** @description Agent base name. */
+                base: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    ETag?: string;
+                    "X-GC-Request-Id": components["headers"]["X-GC-Request-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FragmentsResponse"];
                 };
             };
             /** @description Error */
