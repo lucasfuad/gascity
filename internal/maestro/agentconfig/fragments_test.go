@@ -1,7 +1,6 @@
 package agentconfig
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,11 +56,11 @@ func TestComputeFragmentsETag_EmptyList(t *testing.T) {
 	}
 }
 
-// setupCityWithAgent writes a minimal city tree under t.TempDir() and
-// returns (cityPath, agentBase). Each map entry is a path relative to
-// the city root and its file content. Parent directories are created
-// automatically. Used by the ListAgentFragments tests.
-func setupCityWithAgent(t *testing.T, files map[string]string) (string, string) {
+// setupCityFiles writes a minimal city tree under t.TempDir() and
+// returns cityPath. Each map entry is a path relative to the city root
+// and its file content. Parent directories are created automatically.
+// Used by the ListAgentFragments tests.
+func setupCityFiles(t *testing.T, files map[string]string) string {
 	t.Helper()
 	root := t.TempDir()
 	for rel, content := range files {
@@ -73,22 +72,15 @@ func setupCityWithAgent(t *testing.T, files map[string]string) (string, string) 
 			t.Fatalf("write %s: %v", full, err)
 		}
 	}
-	return root, "worker"
+	return root
 }
 
 func TestListAgentFragments_EmptyDirs(t *testing.T) {
 	t.Parallel()
-	cityPath, agentBase := setupCityWithAgent(t, map[string]string{
-		"city.toml": `[workspace]
-name = "test"
-
-[[agent]]
-name = "worker"
-prompt_template = "prompts/worker.template.md"
-`,
+	cityPath := setupCityFiles(t, map[string]string{
 		"prompts/worker.template.md": `# bare body, no fragments`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, agentBase)
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}
@@ -99,18 +91,11 @@ prompt_template = "prompts/worker.template.md"
 
 func TestListAgentFragments_SingleDefine(t *testing.T) {
 	t.Parallel()
-	cityPath, agentBase := setupCityWithAgent(t, map[string]string{
-		"city.toml": `[workspace]
-name = "test"
-
-[[agent]]
-name = "worker"
-prompt_template = "prompts/worker.template.md"
-`,
+	cityPath := setupCityFiles(t, map[string]string{
 		"prompts/worker.template.md":        `# body`,
 		"prompts/shared/safety.template.md": `{{define "safety"}}Be careful.{{end}}`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, agentBase)
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}
@@ -131,21 +116,14 @@ prompt_template = "prompts/worker.template.md"
 
 func TestListAgentFragments_MultipleDefinesPerFile(t *testing.T) {
 	t.Parallel()
-	cityPath, agentBase := setupCityWithAgent(t, map[string]string{
-		"city.toml": `[workspace]
-name = "test"
-
-[[agent]]
-name = "worker"
-prompt_template = "prompts/worker.template.md"
-`,
+	cityPath := setupCityFiles(t, map[string]string{
 		"prompts/worker.template.md": `# body`,
 		"prompts/shared/multi.template.md": `
 {{define "warning"}}Warning text.{{end}}
 {{define "danger"}}Danger text.{{end}}
 `,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, agentBase)
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}
@@ -173,19 +151,12 @@ func TestListAgentFragments_CollisionPromptDirWins(t *testing.T) {
 	// Since both files contain `{{define "safety"}}` blocks with DIFFERENT contents,
 	// they produce different SHAs — we can distinguish which one won by inspecting
 	// got[0].SHA / got[0].Source.
-	cityPath, agentBase := setupCityWithAgent(t, map[string]string{
-		"city.toml": `[workspace]
-name = "test"
-
-[[agent]]
-name = "worker"
-prompt_template = "prompts/worker.template.md"
-`,
+	cityPath := setupCityFiles(t, map[string]string{
 		"prompts/worker.template.md":                    `# body`,
 		"prompts/shared/safety.template.md":             `{{define "safety"}}PACK VERSION{{end}}`,
 		"prompts/template-fragments/safety.template.md": `{{define "safety"}}AGENT VERSION{{end}}`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, agentBase)
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}
@@ -209,20 +180,13 @@ prompt_template = "prompts/worker.template.md"
 
 func TestListAgentFragments_ParseErrorSkipped(t *testing.T) {
 	t.Parallel()
-	cityPath, agentBase := setupCityWithAgent(t, map[string]string{
-		"city.toml": `[workspace]
-name = "test"
-
-[[agent]]
-name = "worker"
-prompt_template = "prompts/worker.template.md"
-`,
+	cityPath := setupCityFiles(t, map[string]string{
 		"prompts/worker.template.md":      `# body`,
 		"prompts/shared/good.template.md": `{{define "good"}}OK.{{end}}`,
 		// Broken syntax — unclosed action delimiter.
 		"prompts/shared/broken.template.md": `{{define "broken"}}{{ unclosed`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, agentBase)
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("expected no top-level error (best-effort), got: %v", err)
 	}
@@ -236,35 +200,14 @@ prompt_template = "prompts/worker.template.md"
 
 func TestListAgentFragments_PerAgentFragments(t *testing.T) {
 	t.Parallel()
-	root := t.TempDir()
-	files := map[string]string{
-		"city.toml": `[workspace]
-name = "test"
-
-[[agent]]
-name = "worker-a"
-prompt_template = "agents/worker-a/agent.template.md"
-
-[[agent]]
-name = "worker-b"
-prompt_template = "agents/worker-b/agent.template.md"
-`,
+	cityPath := setupCityFiles(t, map[string]string{
 		"agents/worker-a/agent.template.md":                      `# A`,
 		"agents/worker-a/template-fragments/private.template.md": `{{define "private_a"}}A only.{{end}}`,
 		"agents/worker-b/agent.template.md":                      `# B`,
 		"agents/worker-b/template-fragments/private.template.md": `{{define "private_b"}}B only.{{end}}`,
-	}
-	for rel, content := range files {
-		full := filepath.Join(root, rel)
-		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
+	})
 
-	gotA, err := ListAgentFragments(fsys.OSFS{}, root, "worker-a")
+	gotA, err := ListAgentFragments(fsys.OSFS{}, cityPath, "agents/worker-a/agent.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments(worker-a): %v", err)
 	}
@@ -272,7 +215,7 @@ prompt_template = "agents/worker-b/agent.template.md"
 		t.Errorf("worker-a got %v, want [private_a]", gotA)
 	}
 
-	gotB, err := ListAgentFragments(fsys.OSFS{}, root, "worker-b")
+	gotB, err := ListAgentFragments(fsys.OSFS{}, cityPath, "agents/worker-b/agent.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments(worker-b): %v", err)
 	}
@@ -281,21 +224,19 @@ prompt_template = "agents/worker-b/agent.template.md"
 	}
 }
 
-func TestListAgentFragments_AgentNotFound(t *testing.T) {
+// TestListAgentFragments_NoPromptTemplate covers the case where the
+// caller passes an empty promptTemplate (agent has no prompt
+// configured). Only pack-level directories are scanned.
+func TestListAgentFragments_NoPromptTemplate(t *testing.T) {
 	t.Parallel()
-	cityPath, _ := setupCityWithAgent(t, map[string]string{
-		"city.toml": `[workspace]
-name = "test"
-
-[[agent]]
-name = "worker"
-prompt_template = "prompts/worker.template.md"
-`,
-		"prompts/worker.template.md": `# body`,
+	cityPath := setupCityFiles(t, map[string]string{
+		"prompts/shared/global.template.md": `{{define "global"}}Pack-wide.{{end}}`,
 	})
-	_, err := ListAgentFragments(fsys.OSFS{}, cityPath, "nonexistent")
-	var notFound ErrAgentNotFound
-	if !errors.As(err, &notFound) {
-		t.Errorf("err = %v, want ErrAgentNotFound", err)
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "")
+	if err != nil {
+		t.Fatalf("ListAgentFragments: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "global" {
+		t.Errorf("got %v, want [global]", got)
 	}
 }

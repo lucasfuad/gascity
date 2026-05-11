@@ -9,7 +9,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/gastownhall/gascity/internal/config"
 	"github.com/gastownhall/gascity/internal/fsys"
 )
 
@@ -62,17 +61,6 @@ func ComputeFragmentsETag(refs []FragmentRef) string {
 	return "\"" + hex.EncodeToString(sum[:8]) + "\""
 }
 
-// ErrAgentNotFound is returned by ListAgentFragments when the named
-// agent is not present in the city configuration. The API layer maps
-// this to a 404 application/problem+json.
-type ErrAgentNotFound struct {
-	Name string
-}
-
-func (e ErrAgentNotFound) Error() string {
-	return "agent " + e.Name + " not found"
-}
-
 // ListAgentFragments scans the four directories the supervisor reads
 // at boot (cmd/gc/prompt.go: loadSharedTemplates priority order) and
 // returns one FragmentRef per {{define "X"}} block exposed via
@@ -83,33 +71,22 @@ func (e ErrAgentNotFound) Error() string {
 //  3. <agent prompt_template dir>/shared/
 //  4. <agent prompt_template dir>/template-fragments/  (highest)
 //
+// promptTemplate is the agent's configured prompt_template path
+// (relative to cityPath, as stored in the composed config). Empty
+// promptTemplate means the agent has no prompt configured — only the
+// pack-level dirs are scanned. Agent resolution (mapping a request
+// name to its config.Agent — including pack-imported and pool members)
+// is the caller's responsibility; pass the result of findAgent here.
+//
 // "Bare" files (no {{define}}) are silently ignored — they only
 // overwrite the root template at parse time, which is not what
-// inject_fragments resolves via tmpl.Lookup.
-//
-// Returns ErrAgentNotFound when the agent is not present in
-// city.toml; returns a wrapped config.Load error for malformed TOML;
-// silently skips individual files with parse errors (parity with the
-// supervisor's best-effort loadSharedTemplates).
-func ListAgentFragments(fs fsys.FS, cityPath, agentBase string) ([]FragmentRef, error) {
-	cfg, err := config.Load(fs, filepath.Join(cityPath, "city.toml"))
-	if err != nil {
-		return nil, err
-	}
-
+// inject_fragments resolves via tmpl.Lookup. Individual file parse
+// errors are silently skipped (parity with the supervisor's
+// best-effort loadSharedTemplates).
+func ListAgentFragments(fs fsys.FS, cityPath, promptTemplate string) ([]FragmentRef, error) {
 	var promptDir string
-	found := false
-	for _, a := range cfg.Agents {
-		if a.Name == agentBase {
-			found = true
-			if a.PromptTemplate != "" {
-				promptDir = filepath.Dir(filepath.Join(cityPath, a.PromptTemplate))
-			}
-			break
-		}
-	}
-	if !found {
-		return nil, ErrAgentNotFound{Name: agentBase}
+	if promptTemplate != "" {
+		promptDir = filepath.Dir(filepath.Join(cityPath, promptTemplate))
 	}
 
 	// Scan directories in supervisor priority order. Lower-priority

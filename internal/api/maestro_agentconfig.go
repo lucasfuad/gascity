@@ -560,20 +560,21 @@ func (s *Server) humaHandleMaestroAgentGetFragmentsQualified(_ context.Context, 
 	return s.maestroAgentReadFragments(input.QualifiedName(), input.IfNoneMatch)
 }
 
-// maestroAgentReadFragments is the shared GET body. The 404 path maps
-// agentconfig.ErrAgentNotFound to the standard problem+json shape,
-// mirroring how resolveAgentPromptTemplate handles its agent-missing
-// branch. Filesystem-level errors surface as 500.
+// maestroAgentReadFragments is the shared GET body. Agent resolution
+// goes through findAgent so pack-imported and pool-member names work
+// identically to the prompt-template handlers; only after that does
+// the fragment scan run. The 404 path mirrors resolveAgentPromptTemplate.
+// Filesystem-level errors surface as 500.
 func (s *Server) maestroAgentReadFragments(name, ifNoneMatch string) (*MaestroAgentFragmentsOutput, error) {
 	if name == "" {
 		return nil, huma.Error400BadRequest("agent name required")
 	}
-	refs, err := agentconfig.ListAgentFragments(fsys.OSFS{}, s.state.CityPath(), name)
+	agentCfg, ok := findAgent(s.state.Config(), name)
+	if !ok {
+		return nil, huma.Error404NotFound("agent " + name + " not found")
+	}
+	refs, err := agentconfig.ListAgentFragments(fsys.OSFS{}, s.state.CityPath(), agentCfg.PromptTemplate)
 	if err != nil {
-		var notFound agentconfig.ErrAgentNotFound
-		if errors.As(err, &notFound) {
-			return nil, huma.Error404NotFound("agent " + name + " not found")
-		}
 		return nil, huma.Error500InternalServerError("list fragments: " + err.Error())
 	}
 	etag := agentconfig.ComputeFragmentsETag(refs)
