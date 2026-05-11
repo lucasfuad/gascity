@@ -159,7 +159,7 @@ AgentOverride modifies a pack-stamped agent for a specific rig.
 | `session_live` | []string |  |  | SessionLive overrides the agent's session_live commands. |
 | `overlay_dir` | string |  |  | OverlayDir overrides the agent's overlay_dir path. Copies contents additively into the agent's working directory at startup. Relative paths resolve against the city directory. |
 | `default_sling_formula` | string |  |  | DefaultSlingFormula overrides the default sling formula. |
-| `inject_fragments` | []string |  |  | InjectFragments overrides the agent's inject_fragments list. |
+| `inject_fragments` | []string |  |  | InjectFragments overrides the agent's inject_fragments list. Leave this field unset to keep inherited fragments; JSON callers may send null for the same no-op. Set an empty list to clear fragments; set a populated list to replace fragments. |
 | `append_fragments` | []string |  |  | AppendFragments appends named template fragments to this agent's rendered prompt. It is the V2 spelling for per-agent fragment selection. |
 | `pre_start_append` | []string |  |  | PreStartAppend appends commands to the agent's pre_start list (instead of replacing). Applied after PreStart if both are set. |
 | `session_setup_append` | []string |  |  | SessionSetupAppend appends commands to the agent's session_setup list. |
@@ -211,7 +211,7 @@ AgentPatch modifies an existing agent identified by (Dir, Name).
 | `session_live` | []string |  |  | SessionLive overrides the agent's session_live commands. |
 | `overlay_dir` | string |  |  | OverlayDir overrides the agent's overlay_dir path. Copies contents additively into the agent's working directory at startup. Relative paths resolve against the city directory. |
 | `default_sling_formula` | string |  |  | DefaultSlingFormula overrides the default sling formula. |
-| `inject_fragments` | []string |  |  | InjectFragments overrides the agent's inject_fragments list. Pointer-to-slice gives this field presence-aware semantics across the three states the wire / TOML / Go layers must distinguish:    nil           — key absent, "leave unchanged" (no-op merge).   &[]string&#123;&#125;   — key present with empty list, "clear" — replaces                   the agent's inject_fragments with the empty list.                   Without the pointer, omitempty drops `[]` on TOML                   encode and a clear silently no-ops on the next                   reload (callers cannot distinguish absent from                   present-empty).   &[]string&#123;…&#125;  — key present with values, "replace with this list".  This field intentionally diverges from the `len &gt; 0` pattern shared by other AgentPatch list fields (PreStart, DependsOn, SessionSetup, etc.). Adopting the same presence-aware pattern field by field is the natural follow-up whenever a clear UX surfaces for those. Construct via Fragments() to keep callers terse. |
+| `inject_fragments` | []string |  |  | InjectFragments overrides the agent's inject_fragments list. Leave this field unset to keep inherited fragments; JSON callers may send null for the same no-op. Set an empty list to clear fragments; set a populated list to replace fragments. |
 | `append_fragments` | []string |  |  | AppendFragments overrides the agent's append_fragments list. |
 | `attach` | boolean |  |  | Attach overrides the agent's attach setting. |
 | `depends_on` | []string |  |  | DependsOn overrides the agent's dependency list. |

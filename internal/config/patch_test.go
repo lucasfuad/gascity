@@ -233,6 +233,13 @@ func TestAgentPatchInjectFragmentsTOMLRoundtrip(t *testing.T) {
 		if strings.Contains(buf.String(), "inject_fragments") {
 			t.Errorf("encoded output should omit inject_fragments when nil; got:\n%s", buf.String())
 		}
+		var decoded AgentPatch
+		if _, err := toml.Decode(buf.String(), &decoded); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if decoded.InjectFragments != nil {
+			t.Errorf("decoded InjectFragments = %v, want nil", *decoded.InjectFragments)
+		}
 	})
 
 	t.Run("empty slice round-trips as inject_fragments = []", func(t *testing.T) {
@@ -270,6 +277,46 @@ func TestAgentPatchInjectFragmentsTOMLRoundtrip(t *testing.T) {
 		got := *decoded.InjectFragments
 		if len(got) != 2 || got[0] != "frag-a" || got[1] != "frag-b" {
 			t.Errorf("decoded InjectFragments = %v, want [frag-a frag-b]", got)
+		}
+	})
+}
+
+func TestAgentOverrideInjectFragmentsPresenceAware(t *testing.T) {
+	t.Run("absent key leaves baseline unchanged", func(t *testing.T) {
+		a := &Agent{Name: "worker", InjectFragments: []string{"baseline"}}
+		var override AgentOverride
+		if _, err := toml.Decode(`agent = "worker"`, &override); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		applyAgentOverride(a, &override)
+		got := a.InjectFragments
+		if len(got) != 1 || got[0] != "baseline" {
+			t.Errorf("InjectFragments = %v, want [baseline] (unchanged)", got)
+		}
+	})
+
+	t.Run("empty list clears the list", func(t *testing.T) {
+		a := &Agent{Name: "worker", InjectFragments: []string{"baseline"}}
+		var override AgentOverride
+		if _, err := toml.Decode("agent = \"worker\"\ninject_fragments = []", &override); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		applyAgentOverride(a, &override)
+		if len(a.InjectFragments) != 0 {
+			t.Errorf("InjectFragments = %v, want empty (cleared)", a.InjectFragments)
+		}
+	})
+
+	t.Run("populated list replaces the list", func(t *testing.T) {
+		a := &Agent{Name: "worker", InjectFragments: []string{"baseline"}}
+		var override AgentOverride
+		if _, err := toml.Decode("agent = \"worker\"\ninject_fragments = [\"frag-a\", \"frag-b\"]", &override); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		applyAgentOverride(a, &override)
+		got := a.InjectFragments
+		if len(got) != 2 || got[0] != "frag-a" || got[1] != "frag-b" {
+			t.Errorf("InjectFragments = %v, want [frag-a frag-b]", got)
 		}
 	})
 }

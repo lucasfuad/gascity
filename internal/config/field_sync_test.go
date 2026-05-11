@@ -338,7 +338,7 @@ func TestApplyAgentOverrideCoversAllFields(t *testing.T) {
 		SessionLive:             []string{"live-cmd"},
 		OverlayDir:              strVal("overlays/test"),
 		DefaultSlingFormula:     strVal("mol-work"),
-		InjectFragments:         []string{"frag1"},
+		InjectFragments:         Fragments("frag1"),
 		AppendFragments:         []string{"append1"},
 		DependsOn:               []string{"other-agent"},
 		ResumeCommand:           strVal("claude --resume {{.SessionKey}}"),

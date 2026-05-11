@@ -95,25 +95,10 @@ type AgentPatch struct {
 	OverlayDir *string `toml:"overlay_dir,omitempty"`
 	// DefaultSlingFormula overrides the default sling formula.
 	DefaultSlingFormula *string `toml:"default_sling_formula,omitempty"`
-	// InjectFragments overrides the agent's inject_fragments list.
-	// Pointer-to-slice gives this field presence-aware semantics across
-	// the three states the wire / TOML / Go layers must distinguish:
-	//
-	//   nil           — key absent, "leave unchanged" (no-op merge).
-	//   &[]string{}   — key present with empty list, "clear" — replaces
-	//                   the agent's inject_fragments with the empty list.
-	//                   Without the pointer, omitempty drops `[]` on TOML
-	//                   encode and a clear silently no-ops on the next
-	//                   reload (callers cannot distinguish absent from
-	//                   present-empty).
-	//   &[]string{…}  — key present with values, "replace with this list".
-	//
-	// This field intentionally diverges from the `len > 0` pattern
-	// shared by other AgentPatch list fields (PreStart, DependsOn,
-	// SessionSetup, etc.). Adopting the same presence-aware pattern
-	// field by field is the natural follow-up whenever a clear UX
-	// surfaces for those. Construct via Fragments() to keep callers
-	// terse.
+	// InjectFragments overrides the agent's inject_fragments list. Leave this
+	// field unset to keep inherited fragments; JSON callers may send null for
+	// the same no-op. Set an empty list to clear fragments; set a populated
+	// list to replace fragments.
 	InjectFragments *[]string `toml:"inject_fragments,omitempty"`
 	// AppendFragments overrides the agent's append_fragments list.
 	AppendFragments []string `toml:"append_fragments,omitempty"`
@@ -230,13 +215,13 @@ func (p *Patches) IsEmpty() bool {
 }
 
 // Fragments returns a pointer to the given inject_fragments list for use
-// in AgentPatch literals. Mirrors the three presence-aware states of
-// AgentPatch.InjectFragments:
+// in AgentPatch and AgentOverride literals. Mirrors the three
+// presence-aware states of InjectFragments:
 //
-//	Fragments()                 // → &[]string{}    — clear (replace with empty list)
-//	Fragments("frag-a")         // → &[]string{"frag-a"}    — replace with single item
-//	Fragments("frag-a", "...")  // → &[]string{...}          — replace with the list
-//	                            // nil   — leave unchanged (don't call Fragments)
+//	Fragments()                 // empty list: clear
+//	Fragments("frag-a")         // single item: replace with one fragment
+//	Fragments("frag-a", "...")  // populated list: replace with all fragments
+//	nil                         // leave unchanged; do not call Fragments
 //
 // Calling Fragments() with no arguments is the canonical clear; it
 // makes the intent visible at the call site without ad-hoc

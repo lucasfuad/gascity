@@ -2417,8 +2417,8 @@ func applyAgentOverride(a *Agent, ov *AgentOverride) {
 	if ov.WakeMode != nil {
 		a.WakeMode = *ov.WakeMode
 	}
-	if len(ov.InjectFragments) > 0 {
-		a.InjectFragments = append([]string(nil), ov.InjectFragments...)
+	if ov.InjectFragments != nil {
+		a.InjectFragments = append([]string(nil), (*ov.InjectFragments)...)
 	}
 	if len(ov.AppendFragments) > 0 {
 		a.AppendFragments = append([]string(nil), ov.AppendFragments...)

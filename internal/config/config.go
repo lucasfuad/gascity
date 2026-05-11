@@ -577,8 +577,11 @@ type AgentOverride struct {
 	OverlayDir *string `toml:"overlay_dir,omitempty"`
 	// DefaultSlingFormula overrides the default sling formula.
 	DefaultSlingFormula *string `toml:"default_sling_formula,omitempty"`
-	// InjectFragments overrides the agent's inject_fragments list.
-	InjectFragments []string `toml:"inject_fragments,omitempty"`
+	// InjectFragments overrides the agent's inject_fragments list. Leave this
+	// field unset to keep inherited fragments; JSON callers may send null for
+	// the same no-op. Set an empty list to clear fragments; set a populated
+	// list to replace fragments.
+	InjectFragments *[]string `toml:"inject_fragments,omitempty"`
 	// AppendFragments appends named template fragments to this agent's rendered
 	// prompt. It is the V2 spelling for per-agent fragment selection.
 	AppendFragments []string `toml:"append_fragments,omitempty"`
