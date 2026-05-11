@@ -80,7 +80,7 @@ func TestListAgentFragments_EmptyDirs(t *testing.T) {
 	cityPath := setupCityFiles(t, map[string]string{
 		"prompts/worker.template.md": `# bare body, no fragments`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestListAgentFragments_SingleDefine(t *testing.T) {
 		"prompts/worker.template.md":        `# body`,
 		"prompts/shared/safety.template.md": `{{define "safety"}}Be careful.{{end}}`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestListAgentFragments_MultipleDefinesPerFile(t *testing.T) {
 {{define "danger"}}Danger text.{{end}}
 `,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestListAgentFragments_CollisionPromptDirWins(t *testing.T) {
 		"prompts/shared/safety.template.md":             `{{define "safety"}}PACK VERSION{{end}}`,
 		"prompts/template-fragments/safety.template.md": `{{define "safety"}}AGENT VERSION{{end}}`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}
@@ -186,7 +186,7 @@ func TestListAgentFragments_ParseErrorSkipped(t *testing.T) {
 		// Broken syntax — unclosed action delimiter.
 		"prompts/shared/broken.template.md": `{{define "broken"}}{{ unclosed`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "prompts/worker.template.md")
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "prompts/worker.template.md")
 	if err != nil {
 		t.Fatalf("expected no top-level error (best-effort), got: %v", err)
 	}
@@ -207,7 +207,7 @@ func TestListAgentFragments_PerAgentFragments(t *testing.T) {
 		"agents/worker-b/template-fragments/private.template.md": `{{define "private_b"}}B only.{{end}}`,
 	})
 
-	gotA, err := ListAgentFragments(fsys.OSFS{}, cityPath, "agents/worker-a/agent.template.md")
+	gotA, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "agents/worker-a/agent.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments(worker-a): %v", err)
 	}
@@ -215,12 +215,45 @@ func TestListAgentFragments_PerAgentFragments(t *testing.T) {
 		t.Errorf("worker-a got %v, want [private_a]", gotA)
 	}
 
-	gotB, err := ListAgentFragments(fsys.OSFS{}, cityPath, "agents/worker-b/agent.template.md")
+	gotB, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "agents/worker-b/agent.template.md")
 	if err != nil {
 		t.Fatalf("ListAgentFragments(worker-b): %v", err)
 	}
 	if len(gotB) != 1 || gotB[0].Name != "private_b" {
 		t.Errorf("worker-b got %v, want [private_b]", gotB)
+	}
+}
+
+// TestListAgentFragments_PackDirs covers the critical case where
+// fragments live in pack directories (system packs like gastown, bd,
+// maintenance). Without this, the endpoint would silently return an
+// empty list for any real city — supervisor reads pack fragments at
+// boot via cmd/gc/prompt.go: loadSharedTemplates(packDirs...).
+func TestListAgentFragments_PackDirs(t *testing.T) {
+	t.Parallel()
+	cityPath := setupCityFiles(t, map[string]string{
+		"prompts/worker.template.md": `# body`,
+		// Pack-level fragment — only visible if packDirs is passed.
+		".gc/system/packs/alpha/template-fragments/propulsion.template.md": `{{define "propulsion"}}Pack alpha rule.{{end}}`,
+	})
+	packDir := filepath.Join(cityPath, ".gc", "system", "packs", "alpha")
+
+	// Without packDirs: empty (regression guard for the original bug).
+	gotEmpty, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "prompts/worker.template.md")
+	if err != nil {
+		t.Fatalf("ListAgentFragments (no packDirs): %v", err)
+	}
+	if len(gotEmpty) != 0 {
+		t.Errorf("without packDirs, expected empty list; got %v", gotEmpty)
+	}
+
+	// With packDirs: pack fragment is discovered.
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, []string{packDir}, "prompts/worker.template.md")
+	if err != nil {
+		t.Fatalf("ListAgentFragments: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "propulsion" {
+		t.Errorf("got %v, want [propulsion] from pack", got)
 	}
 }
 
@@ -232,7 +265,7 @@ func TestListAgentFragments_NoPromptTemplate(t *testing.T) {
 	cityPath := setupCityFiles(t, map[string]string{
 		"prompts/shared/global.template.md": `{{define "global"}}Pack-wide.{{end}}`,
 	})
-	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, "")
+	got, err := ListAgentFragments(fsys.OSFS{}, cityPath, nil, "")
 	if err != nil {
 		t.Fatalf("ListAgentFragments: %v", err)
 	}

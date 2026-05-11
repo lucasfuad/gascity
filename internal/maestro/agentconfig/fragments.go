@@ -61,29 +61,45 @@ func ComputeFragmentsETag(refs []FragmentRef) string {
 	return "\"" + hex.EncodeToString(sum[:8]) + "\""
 }
 
-// ListAgentFragments scans the four directories the supervisor reads
-// at boot (cmd/gc/prompt.go: loadSharedTemplates priority order) and
-// returns one FragmentRef per {{define "X"}} block exposed via
+// ListAgentFragments scans the directories the supervisor reads at
+// boot (cmd/gc/prompt.go:102-122, loadSharedTemplates priority order)
+// and returns one FragmentRef per {{define "X"}} block exposed via
 // tmpl.Lookup. Priority order (last wins on Name collision):
 //
-//  1. pack/prompts/shared/             (lowest)
-//  2. pack/template-fragments/
-//  3. <agent prompt_template dir>/shared/
-//  4. <agent prompt_template dir>/template-fragments/  (highest)
+//  1. <packDir>/prompts/shared/           (lowest, one entry per packDir)
+//  2. <packDir>/template-fragments/       (V2 pack-level)
+//  3. <cityPath>/prompts/shared/          (city-level legacy)
+//  4. <cityPath>/template-fragments/      (city-level V2)
+//  5. <promptDir>/shared/                 (sibling of prompt_template)
+//  6. <promptDir>/template-fragments/     (per-agent V2, highest)
+//
+// packDirs is the ordered list of resolved pack directories
+// (config.City.PackDirs). It must be passed because real cities import
+// fragments from system packs (gastown, bd, maintenance...) and a city
+// without these dirs would silently return an empty list even when
+// the supervisor would resolve dozens of fragments at boot. Empty
+// packDirs is allowed for test fixtures with no pack imports.
 //
 // promptTemplate is the agent's configured prompt_template path
 // (relative to cityPath, as stored in the composed config). Empty
 // promptTemplate means the agent has no prompt configured — only the
-// pack-level dirs are scanned. Agent resolution (mapping a request
-// name to its config.Agent — including pack-imported and pool members)
-// is the caller's responsibility; pass the result of findAgent here.
+// pack-level + city-level dirs are scanned. Agent resolution (mapping
+// a request name to its config.Agent, including pack-imported and
+// pool members) is the caller's responsibility; pass the result of
+// findAgent here.
+//
+// Results are sorted by Name so the response is deterministic and the
+// aggregate ETag is stable across calls. Collision resolution is by
+// priority (last-wins on overwrite) and the winning Source field
+// reflects which layer the entry was loaded from — order in the
+// returned slice is a separate concern from priority semantics.
 //
 // "Bare" files (no {{define}}) are silently ignored — they only
 // overwrite the root template at parse time, which is not what
 // inject_fragments resolves via tmpl.Lookup. Individual file parse
 // errors are silently skipped (parity with the supervisor's
 // best-effort loadSharedTemplates).
-func ListAgentFragments(fs fsys.FS, cityPath, promptTemplate string) ([]FragmentRef, error) {
+func ListAgentFragments(fs fsys.FS, cityPath string, packDirs []string, promptTemplate string) ([]FragmentRef, error) {
 	var promptDir string
 	if promptTemplate != "" {
 		promptDir = filepath.Dir(filepath.Join(cityPath, promptTemplate))
@@ -92,10 +108,17 @@ func ListAgentFragments(fs fsys.FS, cityPath, promptTemplate string) ([]Fragment
 	// Scan directories in supervisor priority order. Lower-priority
 	// entries are inserted first; higher-priority entries overwrite
 	// on name collision via the nameToRef map.
-	dirs := []string{
+	dirs := make([]string, 0, 2*len(packDirs)+4)
+	for _, pd := range packDirs {
+		dirs = append(dirs,
+			filepath.Join(pd, "prompts", "shared"),
+			filepath.Join(pd, "template-fragments"),
+		)
+	}
+	dirs = append(dirs,
 		filepath.Join(cityPath, "prompts", "shared"),
 		filepath.Join(cityPath, "template-fragments"),
-	}
+	)
 	if promptDir != "" {
 		dirs = append(dirs,
 			filepath.Join(promptDir, "shared"),

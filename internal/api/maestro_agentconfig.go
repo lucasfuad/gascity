@@ -569,18 +569,25 @@ func (s *Server) maestroAgentReadFragments(name, ifNoneMatch string) (*MaestroAg
 	if name == "" {
 		return nil, huma.Error400BadRequest("agent name required")
 	}
-	agentCfg, ok := findAgent(s.state.Config(), name)
+	cfg := s.state.Config()
+	agentCfg, ok := findAgent(cfg, name)
 	if !ok {
 		return nil, huma.Error404NotFound("agent " + name + " not found")
 	}
-	refs, err := agentconfig.ListAgentFragments(fsys.OSFS{}, s.state.CityPath(), agentCfg.PromptTemplate)
+	// cfg.PackDirs is the same ordered list the supervisor passes to
+	// renderPrompt (see cmd/gc/cmd_prime.go:285-287). Without it the
+	// endpoint silently misses every fragment shipped by system packs.
+	refs, err := agentconfig.ListAgentFragments(fsys.OSFS{}, s.state.CityPath(), cfg.PackDirs, agentCfg.PromptTemplate)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("list fragments: " + err.Error())
 	}
 	etag := agentconfig.ComputeFragmentsETag(refs)
 	if ifNoneMatch != "" && ifNoneMatch == etag {
+		// RFC 9110: 304 responses MUST include validation headers (ETag)
+		// that would have been sent in 200, so caches stay synchronized.
 		return &MaestroAgentFragmentsOutput{
 			Status: http.StatusNotModified,
+			ETag:   etag,
 		}, nil
 	}
 	return &MaestroAgentFragmentsOutput{

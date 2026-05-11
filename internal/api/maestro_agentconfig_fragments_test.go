@@ -155,6 +155,11 @@ func TestMaestroAgentGetFragments_IfNoneMatch304(t *testing.T) {
 	if w2.Body.Len() != 0 {
 		t.Errorf("body length = %d, want 0 for 304", w2.Body.Len())
 	}
+	// RFC 9110: 304 must carry the same ETag the 200 would have, so
+	// caches and clients stay synchronized.
+	if got304ETag := w2.Header().Get("ETag"); got304ETag != etag {
+		t.Errorf("304 ETag = %q, want %q (same as 200's validator)", got304ETag, etag)
+	}
 }
 
 // TestMaestroAgentGetFragments_IfNoneMatchStale200 confirms that a
