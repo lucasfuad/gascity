@@ -37,8 +37,8 @@ type AgentPatchRequest struct {
 	MinSessions    *int    `json:"min_active_sessions,omitempty" minimum:"0"`
 	MaxSessions    *int    `json:"max_active_sessions,omitempty" minimum:"0"`
 
-	Env             map[string]string `json:"env,omitempty"`
-	PreStart        []string          `json:"pre_start,omitempty"`
+	Env      map[string]string `json:"env,omitempty"`
+	PreStart []string          `json:"pre_start,omitempty"`
 	// InjectFragments mirrors upstream config.AgentPatch.InjectFragments
 	// presence-aware semantics (PR #1952): nil = leave unchanged; non-nil
 	// empty pointer = clear; non-nil populated = replace.
